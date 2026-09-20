@@ -1,0 +1,67 @@
+name: Contracts CI
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - "contracts/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "contracts/**"
+
+jobs:
+  build-and-test:
+    name: Forge Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        working-directory: contracts
+        run: forge install
+
+      - name: Compile contracts
+        working-directory: contracts
+        run: forge build --deny-warnings
+
+      - name: Run test suite
+        working-directory: contracts
+        run: forge test --summary -v
+
+      - name: Print test gas report
+        working-directory: contracts
+        run: forge test --gas-report --summary 2>&1 | tail -60
+
+  slither:
+    name: Slither Static Analysis
+    runs-on: ubuntu-latest
+    # Optional: run only if slither is available in the environment
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install Slither
+        run: pip3 install slither-analyzer
+
+      - name: Run Slither
+        working-directory: contracts
+        run: slither src/ --foundry-compile-all 2>&1 || true

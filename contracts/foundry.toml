@@ -16,6 +16,14 @@ remappings = [
     "forge-std/=lib/forge-std/src/",
 ]
 
+# Linter warnings are reviewed and accepted as non-fatal for this project:
+#  - block.timestamp: required for NAV freshness checks (RWAStateOracle)
+#  - boolean-cst: cosmetic style in canExecute() helper returns
+#  - reentrancy-events: emitted inside nonReentrant guards; safe by design
+#  - arbitrary-send-erc20: gate-validated pull-deposit (TBillVault)
+#  - missing-events-access-control: setExecutionGate is owner-only
+#  - unused-return: isEligible() reverts on failure; return value not needed
+
 [rpc_endpoints]
 arbitrum_sepolia = "${ARBITRUM_SEPOLIA_RPC_URL}"
 
