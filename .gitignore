@@ -1,41 +1,86 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# ==============================================================================
+# T-billflow Root .gitignore
+# ==============================================================================
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
+# ------------------------------------------------------------------------------
+# Dependencies
+# ------------------------------------------------------------------------------
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
+.pnp
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
 
-# env files (can opt-in for committing if needed)
-.env*
+# Smart contract dependencies (Foundry libraries: OpenZeppelin, forge-std)
+contracts/lib/
 
-# vercel
-.vercel
+# ------------------------------------------------------------------------------
+# Build Outputs & Caches
+# ------------------------------------------------------------------------------
+# Next.js / Frontend
+.next/
+frontend/.next/
+out/
+frontend/out/
+build/
+dist/
+.turbo/
 
-# typescript
+# Foundry / Solidity
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+out/
+cache/
+broadcast/
+
+# Testing & Coverage
+coverage/
+*.lcov
+
+# TypeScript build info
 *.tsbuildinfo
 next-env.d.ts
+
+# ------------------------------------------------------------------------------
+# Environment Variables & Secrets
+# ------------------------------------------------------------------------------
+.env
+.env*.local
+.env.development
+.env.test
+.env.production
+.env.staging
+*.pem
+*.key
+
+# ------------------------------------------------------------------------------
+# IDE, Editor & OS Files
+# ------------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.history/
+
+# ------------------------------------------------------------------------------
+# Vercel & Deployments
+# ------------------------------------------------------------------------------
+.vercel
+
+# ------------------------------------------------------------------------------
+# Temporary & Generated Setup Files
+# ------------------------------------------------------------------------------
+foundryup-install.ps1
+*.log
