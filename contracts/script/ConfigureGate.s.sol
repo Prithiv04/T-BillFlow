@@ -35,6 +35,44 @@ contract ConfigureGateScript is Script {
         bytes4 withdrawSel = bytes4(keccak256("withdraw(uint256,address,address)"));
         bytes4 allocateSel = bytes4(keccak256("allocate(uint256)"));
 
+        // ── Ownership assertions ────────────────────────────────────────────
+        // Read the on-chain owner of each contract before touching any state.
+        // All four contracts inherit OpenZeppelin Ownable and expose owner().
+        // If any contract's owner does not match the deployer derived from
+        // PRIVATE_KEY, revert here — before vm.startBroadcast — so that zero
+        // configuration transactions are broadcast by an unauthorized signer.
+        address registryOwner = registry.owner();
+        address oracleOwner   = oracle.owner();
+        address gateOwner     = gate.owner();
+        address vaultOwner    = vault.owner();
+
+        console2.log("--- Ownership Verification ---");
+        console2.log("Deployer (from PRIVATE_KEY)  :", deployer);
+        console2.log("AgentMandateRegistry.owner() :", registryOwner);
+        console2.log("RWAStateOracle.owner()       :", oracleOwner);
+        console2.log("AgentExecutionGate.owner()   :", gateOwner);
+        console2.log("TBillVault.owner()           :", vaultOwner);
+        console2.log("------------------------------");
+
+        require(
+            registryOwner == deployer,
+            "OWNERSHIP_MISMATCH: deployer is not owner of AgentMandateRegistry"
+        );
+        require(
+            oracleOwner == deployer,
+            "OWNERSHIP_MISMATCH: deployer is not owner of RWAStateOracle"
+        );
+        require(
+            gateOwner == deployer,
+            "OWNERSHIP_MISMATCH: deployer is not owner of AgentExecutionGate"
+        );
+        require(
+            vaultOwner == deployer,
+            "OWNERSHIP_MISMATCH: deployer is not owner of TBillVault"
+        );
+
+        console2.log("Ownership verified. All four contracts are owned by deployer.");
+
         vm.startBroadcast(deployerPrivateKey);
 
         // 1. Link Gate to Registry
