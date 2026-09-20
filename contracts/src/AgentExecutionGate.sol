@@ -104,6 +104,11 @@ contract AgentExecutionGate is IExecutionGate, Pausable, Ownable, ReentrancyGuar
             req.amount
         );
 
+        // Security hardening: ensure request asset strictly matches authorized mandate asset
+        if (mandateRegistry.getMandate(req.mandateId).asset != req.asset) {
+            revert IRWAStateOracle.AssetNotSupported();
+        }
+
         // 4. RWA asset eligibility
         rwaOracle.isEligible(req.asset, req.action);
     }
