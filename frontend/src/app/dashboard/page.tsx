@@ -8,6 +8,10 @@ import { ArrowRight, TrendingUp, Wallet, BarChart3, ExternalLink } from "lucide-
 import { APY, BSCSCAN_BASE, TBILLFLOW_CONTRACT, SHARE_RATE } from "@/lib/constants";
 import { useVault } from "@/hooks/useVault";
 import { formatUnits } from "viem";
+import { RwaStateCard } from "@/components/RwaStateCard";
+import { MandateCard } from "@/components/MandateCard";
+import { ExecutionGatePreview } from "@/components/ExecutionGatePreview";
+import { TransactionHistory } from "@/components/TransactionHistory";
 
 export default function DashboardPage() {
   const { isConnected, address } = useAccount();
@@ -131,19 +135,10 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
-
-        {/* Contract link */}
-        <div className="mt-6 text-center">
-          <a
-            href={`${BSCSCAN_BASE}/address/${TBILLFLOW_CONTRACT}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-[#F0B90B] transition-colors"
-          >
-            Vault Contract on BscScan <ExternalLink className="h-3 w-3" />
-          </a>
+        <div className="grid gap-6 md:grid-cols-2 mt-8">
+          <RwaStateCard />
+          <MandateCard />
+          <ExecutionGatePreview />
+          <TransactionHistory />
         </div>
-      </div>
-    </div>
-  );
-}
+
