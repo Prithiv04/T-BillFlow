@@ -5,9 +5,9 @@ import { mockRwaState, mockMandate, mockTxHistory } from '@/mocks/data';
 export function ExecutionGatePreview() {
   const [checked, setChecked] = useState(false);
   const { canExecute, reasons } = useCanExecute();
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState<number>(0);
 
-  // Update current time every second for NAV freshness check
+  // Update time every second for NAV freshness check
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
