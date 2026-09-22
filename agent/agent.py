@@ -11,7 +11,14 @@ import time
 from typing import Any, Dict
 
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+try:
+    from web3.middleware import geth_poa_middleware
+except ImportError:
+    # Define a no-op middleware fallback
+    def geth_poa_middleware(make_request, w3):
+        return make_request
+
+
 
 from .config import (
     ARBITRUM_SEPOLIA_RPC_URL,
