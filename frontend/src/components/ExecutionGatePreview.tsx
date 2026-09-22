@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCanExecute } from '@/hooks/useCanExecute';
-import { mockYield, mockRwaState, mockMandate } from '@/mocks/data';
+import { mockRwaState, mockMandate, mockTxHistory } from '@/mocks/data';
 
 export function ExecutionGatePreview() {
   const [checked, setChecked] = useState(false);
   const { canExecute, reasons } = useCanExecute();
+  const [now, setNow] = useState(() => Date.now());
 
-  // Predefined checklist items based on mock requirements
+  // Update current time every second for NAV freshness check
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const checklist = [
     { label: 'Mandate valid', passed: !mockMandate.revoked },
     { label: 'Agent authorized', passed: true }, // always true in mock
@@ -15,7 +21,7 @@ export function ExecutionGatePreview() {
     { label: 'Selector allowed', passed: true }, // mock
     { label: 'Tx limit', passed: true }, // mock
     { label: 'Cumulative limit', passed: true }, // mock
-    { label: 'NAV freshness', passed: (Date.now() - mockRwaState.navUpdatedAt) / 1000 <= mockRwaState.maxNavAge },
+    { label: 'NAV freshness', passed: (now - mockRwaState.navUpdatedAt) / 1000 <= mockRwaState.maxNavAge },
     { label: 'Redemption status', passed: mockRwaState.redemptionOpen },
     { label: 'Liquidity tier', passed: mockRwaState.liquidityTier >= 1 },
   ];
@@ -23,12 +29,7 @@ export function ExecutionGatePreview() {
   const handleCheck = () => setChecked(true);
 
   const handleExecute = () => {
-    // In mock mode, just push a dummy transaction to history
     const txHash = `0x${Math.random().toString(16).slice(2, 10)}`;
-    // Update mockTxHistory – since it's a simple export, we'll just push directly
-    // This will work because mockTxHistory is mutable.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { mockTxHistory } = require('@/mocks/data');
     mockTxHistory.push({ hash: txHash, status: 'Success', time: Date.now() });
     alert(`Executed mock transaction: ${txHash}`);
   };

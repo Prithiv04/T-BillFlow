@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { mockRwaState } from '@/mocks/data';
 
 export function RwaStateCard() {
-  const now = Date.now();
+  const [now, setNow] = useState(0);
+  // update time every second to keep freshness check current
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const navFresh = (now - mockRwaState.navUpdatedAt) / 1000 <= mockRwaState.maxNavAge;
   const navFreshLabel = navFresh ? 'Fresh' : 'Stale';
   const navFreshColor = navFresh ? 'text-green-500' : 'text-red-500';
@@ -15,7 +21,7 @@ export function RwaStateCard() {
       <div className="grid gap-2">
         <div className="flex justify-between text-sm text-gray-400">
           <span>NAV</span>
-          <span>${mockRwaState.nav.toLocaleString()}</span>
+          <span>{mockRwaState.nav.toLocaleString()}</span>
         </div>
         <div className="flex justify-between text-sm text-gray-400">
           <span>Updated</span>

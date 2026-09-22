@@ -142,3 +142,7 @@ export default function DashboardPage() {
           <TransactionHistory />
         </div>
 
+        </div>
+      </div>
+  );
+}

@@ -47,8 +47,9 @@ export default function PortfolioPage() {
         const data = await r.json();
         if (data.error) throw new Error(data.error);
         setTxHistory(data.transactions ?? []);
-      } catch (e: any) {
-        setTxError(e.message);
+      } catch (e: unknown) {
+        const errorMessage = e && typeof e === 'object' && 'message' in e ? (e as {message: string}).message : String(e);
+        setTxError(errorMessage);
       } finally {
         setTxLoading(false);
       }
