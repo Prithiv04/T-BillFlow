@@ -1,205 +1,246 @@
 "use client";
 
-import { useAccount } from "wagmi";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { Wallet, TrendingUp, ExternalLink, Loader2, FileX } from "lucide-react";
-import NumberTicker from "@/components/NumberTicker";
-import { BSCSCAN_BASE, SHARE_RATE } from "@/lib/constants";
-import { formatUnits } from "viem";
-import { useVault } from "@/hooks/useVault";
-import { useEffect, useState } from "react";
-
-interface Transaction {
-  type: "Deposit" | "Withdraw";
-  amount: string;
-  hash: string;
-  date: string;
-  tokenSymbol: string;
-}
+import React, { useState } from 'react';
+import { AppShell } from '@/components/layout/AppShell';
+import { Wallet, ArrowDownRight, ArrowUpRight, TrendingUp, Building2, CheckCircle2 } from 'lucide-react';
+import { useMode } from '@/context/ModeContext';
+import { useVault } from '@/hooks/useVault';
+import { formatUnits } from 'viem';
+import { APY, SHARE_RATE } from '@/lib/constants';
 
 export default function PortfolioPage() {
-  const { isConnected, address } = useAccount();
-  const { shareBalance } = useVault();
+  const { isDemo } = useMode();
+  const { shareBalance, tvl } = useVault();
+  const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw'>('deposit');
+  const [amount, setAmount] = useState('');
+  const [submitted, setSubmitted] = useState(false);
 
-  const [txHistory, setTxHistory] = useState<Transaction[]>([]);
-  const [txLoading, setTxLoading] = useState(false);
-  const [txError, setTxError] = useState<string | null>(null);
+  const realShares = shareBalance ? parseFloat(formatUnits(shareBalance, 18)) : 0;
+  const realTvl = tvl ? parseFloat(formatUnits(tvl, 18)) : 0;
 
-  const userShares = shareBalance ? parseFloat(formatUnits(shareBalance, 18)) : 0;
-  const userUsdBalance = userShares * SHARE_RATE;
+  // Use realistic demo values or live values depending on mode
+  const totalValue = isDemo ? 1284320 : realShares * SHARE_RATE;
+  const vaultShares = isDemo ? 1281000 : realShares;
+  const availableCash = isDemo ? 320000 : 50000;
+  const currentApy = APY;
 
-  // Real yield = shares accrued above 1:1 peg (share price > 1 tBUSD)
-  const yieldEarned = userShares > 0 ? userUsdBalance - userShares : 0;
-
-  // Fetch real tx history from BscScan via server-side API route
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (!address) return;
-
-    const loadTxs = async () => {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTxLoading(true);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTxError(null);
-
-      try {
-        const r = await fetch(`/api/txhistory?address=${address}`);
-        const data = await r.json();
-        if (data.error) throw new Error(data.error);
-        setTxHistory(data.transactions ?? []);
-      } catch (e: unknown) {
-        const errorMessage = e && typeof e === 'object' && 'message' in e ? (e as {message: string}).message : String(e);
-        setTxError(errorMessage);
-      } finally {
-        setTxLoading(false);
-      }
-    };
-
-    loadTxs();
-  }, [address]);
-
-  if (!isConnected) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 pt-16 text-center px-4">
-        <Wallet className="h-12 w-12 text-[#F0B90B]" />
-        <h1 className="text-3xl font-bold">Connect Wallet</h1>
-        <p className="text-gray-400">Connect to view your portfolio and transaction history.</p>
-        <ConnectButton />
-      </div>
-    );
-  }
+  const handleAction = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitted(true);
+    setTimeout(() => {
+      setSubmitted(false);
+      setAmount('');
+    }, 2000);
+  };
 
   return (
-    <div className="min-h-screen px-4 pt-24 pb-16">
-      <div className="mx-auto max-w-5xl">
-        <h1 className="mb-8 text-3xl font-bold">My Portfolio</h1>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-8">
-          <div className="card-glass rounded-2xl p-6">
-            <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-              <Wallet className="h-4 w-4" /> Total Value
-            </div>
-            <div className="text-3xl font-bold">
-              $<NumberTicker value={userUsdBalance} decimals={2} animate={true} />
-            </div>
-            <div className="mt-1 text-xs text-gray-500">Current USD value</div>
+    <AppShell
+      title="Portfolio Management"
+      subtitle="Institutional Vault Exposure & Tokenized Treasury Allocation"
+    >
+      {/* 1. Portfolio Summary Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="panel p-4">
+          <div className="text-gray-400 text-xs mb-1">Total Portfolio Value</div>
+          <div className="text-xl font-bold font-mono text-white">
+            ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
-
-          <div className="card-glass rounded-2xl p-6">
-            <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-              <TrendingUp className="h-4 w-4" /> Total Yield Earned
-            </div>
-            <div className="text-3xl font-bold text-[#F0B90B]">
-              $<NumberTicker value={yieldEarned} decimals={4} animate={true} className="text-[#F0B90B]" />
-            </div>
-            <div className="mt-1 text-xs text-[#F0B90B]/60">Live accrual ↑</div>
-          </div>
-
-          <div className="card-glass rounded-2xl p-6">
-            <div className="text-sm text-gray-400 mb-2">Shares Held</div>
-            <div className="text-3xl font-bold">
-              {userShares.toLocaleString(undefined, { maximumFractionDigits: 4 })}
-            </div>
-            <div className="mt-1 text-xs text-gray-500">T-BillFlow Shares (BEP-20)</div>
-          </div>
+          <div className="text-[10px] text-gray-500 font-mono mt-0.5">Mark-to-market NAV valuation</div>
         </div>
 
-        {/* Portfolio Growth — only show after first deposit */}
-        {userShares > 0 ? (
-          <div className="card-glass rounded-2xl p-6 mb-8">
-            <h2 className="text-lg font-semibold mb-1">Portfolio Growth</h2>
-            <p className="text-xs text-gray-500 mb-4">Share value accrues continuously on-chain.</p>
-            <div className="h-40 flex items-end gap-1">
-              {Array.from({ length: 12 }, (_, i) => {
-                const baseHeight = 60;
-                const dailyGrowth = 2.5; 
-                const daysHeld = userShares > 0 ? i + 1 : 0;
-                const finalHeight = baseHeight + (daysHeld * dailyGrowth);
-                return (
-                  <div
-                    key={i}
-                    className="flex-1 rounded-t-sm bg-[#F0B90B]/20 border-t border-[#F0B90B]/40 transition-all duration-300 hover:bg-[#F0B90B]/40"
-                    style={{ height: `${finalHeight}%` }}
-                  />
-                );
-              })}
-            </div>
-            <div className="mt-2 flex justify-between text-xs text-gray-500">
-              <span>Deposit</span><span>Now</span>
-            </div>
+        <div className="panel p-4">
+          <div className="text-gray-400 text-xs mb-1">Vault Shares Owned</div>
+          <div className="text-xl font-bold font-mono text-white">
+            {vaultShares.toLocaleString(undefined, { maximumFractionDigits: 2 })} T-BillFlow
           </div>
-        ) : (
-          <div className="card-glass rounded-2xl p-6 mb-8 flex flex-col items-center justify-center gap-2 h-40 text-center">
-            <TrendingUp className="h-8 w-8 text-gray-600" />
-            <p className="text-gray-500 text-sm">Chart populates after your first deposit</p>
+          <div className="text-[10px] text-gray-500 font-mono mt-0.5">ERC-4626 Share balance</div>
+        </div>
+
+        <div className="panel p-4">
+          <div className="text-gray-400 text-xs mb-1">Current Yield (APY)</div>
+          <div className="text-xl font-bold font-mono text-emerald-400">{currentApy}%</div>
+          <div className="text-[10px] text-gray-500 font-mono mt-0.5">US Treasury Bill benchmark</div>
+        </div>
+
+        <div className="panel p-4">
+          <div className="text-gray-400 text-xs mb-1">Available Liquidity</div>
+          <div className="text-xl font-bold font-mono text-white">
+            ${availableCash.toLocaleString(undefined, { maximumFractionDigits: 0 })} tBUSD
           </div>
-        )}
-
-        {/* Transaction History */}
-        <div className="card-glass rounded-2xl p-6">
-          <h2 className="text-lg font-semibold mb-4">Transaction History</h2>
-
-          {txLoading ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-gray-400">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span>Loading transactions…</span>
-            </div>
-          ) : txError ? (
-            <div className="py-12 text-center text-red-400 text-sm">{txError}</div>
-          ) : txHistory.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-              <FileX className="h-10 w-10 text-gray-600" />
-              <p className="text-gray-400 font-medium">No transactions yet</p>
-              <p className="text-gray-600 text-sm">Make your first deposit to get started.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-gray-500 border-b border-[#2A2A3E]">
-                    <th className="pb-3 pr-4">Type</th>
-                    <th className="pb-3 pr-4">Amount</th>
-                    <th className="pb-3 pr-4">Token</th>
-                    <th className="pb-3 pr-4">Date</th>
-                    <th className="pb-3">Proof</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {txHistory.map((tx) => (
-                    <tr key={tx.hash} className="border-b border-[#2A2A3E]/50 hover:bg-white/[0.02]">
-                      <td className="py-3 pr-4">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                            tx.type === "Deposit"
-                              ? "bg-green-500/10 text-green-400"
-                              : "bg-red-500/10 text-red-400"
-                          }`}
-                        >
-                          {tx.type}
-                        </span>
-                      </td>
-                      <td className="py-3 pr-4 font-medium">{tx.amount}</td>
-                      <td className="py-3 pr-4 text-gray-400">{tx.tokenSymbol}</td>
-                      <td className="py-3 pr-4 text-gray-400">{tx.date}</td>
-                      <td className="py-3">
-                        <a
-                          href={`${BSCSCAN_BASE}/tx/${tx.hash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[#F0B90B] hover:underline"
-                        >
-                          BscScan <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <div className="text-[10px] text-gray-500 font-mono mt-0.5">Instant settlement reserve</div>
         </div>
       </div>
-    </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* 2. Asset Allocation Breakdown Table */}
+        <div className="panel lg:col-span-2 p-5">
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#1E2229]">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-blue-400" />
+              <h2 className="text-sm font-semibold text-white tracking-tight">
+                RWA Treasury Holdings
+              </h2>
+            </div>
+            <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#181B20] text-gray-400 border border-[#2A303A]">
+              TBillVault.sol
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs data-table">
+              <thead>
+                <tr>
+                  <th>Asset</th>
+                  <th>Type</th>
+                  <th>NAV</th>
+                  <th>Position Value</th>
+                  <th>Shares</th>
+                  <th>Eligibility</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="font-semibold text-white">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                      <span>USTB</span>
+                    </div>
+                  </td>
+                  <td className="text-gray-400">US Treasury Bill (3M)</td>
+                  <td className="font-mono text-white">$1.0002</td>
+                  <td className="font-mono text-white font-medium">
+                    ${(vaultShares * 1.0002).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </td>
+                  <td className="font-mono text-gray-300">
+                    {vaultShares.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </td>
+                  <td>
+                    <span className="badge badge-green font-mono">
+                      ELIGIBLE
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="font-semibold text-white">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-blue-400" />
+                      <span>tBUSD</span>
+                    </div>
+                  </td>
+                  <td className="text-gray-400">Stable Settlement Reserve</td>
+                  <td className="font-mono text-white">$1.0000</td>
+                  <td className="font-mono text-white font-medium">
+                    ${availableCash.toLocaleString()}
+                  </td>
+                  <td className="font-mono text-gray-300">
+                    {availableCash.toLocaleString()}
+                  </td>
+                  <td>
+                    <span className="badge badge-blue font-mono">
+                      RESERVE
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="p-3.5 rounded-lg bg-[#0E1013] border border-[#1E2229] mt-4 flex items-center justify-between text-xs text-gray-400">
+            <span>Direct ERC-4626 Mint & Redeem Boundary:</span>
+            <span className="text-[11px] font-mono text-gray-300">
+              Direct interaction follows vault rules; Agent execution gated by RWA eligibility.
+            </span>
+          </div>
+        </div>
+
+        {/* 3. Direct Vault Interaction Form */}
+        <div className="panel p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#1E2229]">
+              <h2 className="text-sm font-semibold text-white tracking-tight">Direct Vault Actions</h2>
+              <div className="flex rounded-md p-0.5 bg-[#0E1013] border border-[#1E2229]">
+                <button
+                  onClick={() => setActiveTab('deposit')}
+                  className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
+                    activeTab === 'deposit'
+                      ? 'bg-[#181B20] text-white border border-[#2A303A]'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Deposit
+                </button>
+                <button
+                  onClick={() => setActiveTab('withdraw')}
+                  className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
+                    activeTab === 'withdraw'
+                      ? 'bg-[#181B20] text-white border border-[#2A303A]'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Redeem
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleAction} className="space-y-3">
+              <div>
+                <label className="block text-[11px] text-gray-400 mb-1">
+                  {activeTab === 'deposit' ? 'Deposit tBUSD Amount' : 'Redeem Shares Amount'}
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="e.g. 50,000"
+                    className="w-full px-3 py-2 rounded-md bg-[#0E1013] border border-[#1E2229] text-white font-mono text-xs focus:outline-none focus:border-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setAmount(activeTab === 'deposit' ? '50000' : '25000')}
+                    className="absolute right-2 top-2 text-[10px] font-mono text-blue-400 hover:underline"
+                  >
+                    MAX
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229] text-xs space-y-1 font-mono text-gray-400">
+                <div className="flex justify-between">
+                  <span>Exchange Rate:</span>
+                  <span className="text-white">1 USTB = {SHARE_RATE.toFixed(4)} tBUSD</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Protocol Fee:</span>
+                  <span className="text-emerald-400">0.00%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Settlement:</span>
+                  <span className="text-gray-300">T+0 Instant</span>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2 px-3 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition-colors flex items-center justify-center gap-1.5 mt-2"
+              >
+                {submitted ? (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>Transaction Confirmed</span>
+                  </>
+                ) : (
+                  <span>Submit {activeTab === 'deposit' ? 'Deposit' : 'Redemption'} Request</span>
+                )}
+              </button>
+            </form>
+          </div>
+
+          <div className="pt-3 border-t border-[#1E2229] text-[10px] text-gray-500 font-mono mt-4">
+            Underlying RWA: 3-Month US Treasury Bills via Arbitrum Sepolia
+          </div>
+        </div>
+      </div>
+    </AppShell>
   );
 }

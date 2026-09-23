@@ -1,24 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount } from "wagmi";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ExternalLink, CheckCircle2, Loader2, ArrowDownUp } from "lucide-react";
-import { APY, BSCSCAN_BASE, SHARE_RATE } from "@/lib/constants";
+import { ExternalLink, CheckCircle2, Loader2 } from "lucide-react";
+import { APY, SHARE_RATE } from "@/lib/constants";
 import { Suspense } from "react";
 import { parseUnits } from "viem";
 import { useVault } from "@/hooks/useVault";
 import { usePublicClient } from "wagmi";
+import { AppShell } from "@/components/layout/AppShell";
 
 function DepositContent() {
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get("tab") === "withdraw" ? "withdraw" : "deposit";
-  const { isConnected } = useAccount();
   const { deposit, redeem, approve, refetchAll } = useVault();
   const publicClient = usePublicClient();
 
@@ -36,16 +34,10 @@ function DepositContent() {
       let hash = "";
       if (tab === "deposit") {
         const parsedAmount = parseUnits(amount, 18);
-        
-        // 1. Send Approve Transaction
         const approveHash = await approve(parsedAmount);
-        
-        // 2. Wait for Approve to be mined
         if (publicClient) {
           await publicClient.waitForTransactionReceipt({ hash: approveHash });
         }
-        
-        // 3. Send Deposit Transaction
         hash = await deposit(parsedAmount);
       } else {
         const parsedShares = parseUnits(amount, 18);
@@ -60,127 +52,98 @@ function DepositContent() {
     }
   };
 
-  if (!isConnected) {
-    return (
-      <div className="flex flex-col items-center gap-4 py-12 text-center">
-        <p className="text-gray-400">Connect your wallet to deposit or withdraw.</p>
-        <ConnectButton />
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-md mx-auto">
-      <Tabs defaultValue={defaultTab} className="flex flex-col gap-6 w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-[#141422] border border-[#2A2A3E] h-14 p-1 rounded-xl">
-          <TabsTrigger value="deposit" className="rounded-lg data-active:bg-[#F0B90B]/10 data-active:text-[#F0B90B] text-base font-semibold">
-            Deposit
-          </TabsTrigger>
-          <TabsTrigger value="withdraw" className="rounded-lg data-active:bg-[#F0B90B]/10 data-active:text-[#F0B90B] text-base font-semibold">
-            Withdraw
-          </TabsTrigger>
+    <div className="panel max-w-xl mx-auto p-6">
+      <Tabs defaultValue={defaultTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6 bg-[#0E1013] border border-[#1E2229]">
+          <TabsTrigger value="deposit" className="text-xs">Deposit tBUSD</TabsTrigger>
+          <TabsTrigger value="withdraw" className="text-xs">Redeem Shares</TabsTrigger>
         </TabsList>
 
         {(["deposit", "withdraw"] as const).map((tab) => (
-          <TabsContent key={tab} value={tab}>
-            <div className="card-glass rounded-2xl p-6 space-y-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">{tab === "deposit" ? "You pay (tBUSD)" : "Shares to redeem"}</span>
-                <button
-                  className="text-[#F0B90B] hover:underline"
-                  onClick={() => setAmount(tab === "deposit" ? "1000" : "952.4201")}
-                >
-                  Max
-                </button>
-              </div>
-
+          <TabsContent key={tab} value={tab} className="space-y-4">
+            <div>
+              <label className="text-xs font-medium text-gray-400 block mb-1">
+                {tab === "deposit" ? "Amount to Deposit (tBUSD)" : "Shares to Redeem"}
+              </label>
               <div className="relative">
                 <Input
                   type="number"
-                  placeholder="0.00"
+                  placeholder="0.0"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="bg-[#0D0D1A] border-[#2A2A3E] text-white text-xl h-14 pr-24 focus:border-[#F0B90B]/50"
+                  className="bg-[#0E1013] border-[#1E2229] text-white font-mono text-sm pr-16"
+                  disabled={status === "pending"}
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">
-                  {tab === "deposit" ? "tBUSD" : "Shares"}
-                </span>
+                <button
+                  type="button"
+                  onClick={() => setAmount("1000")}
+                  className="absolute right-3 top-2.5 text-xs text-blue-400 font-mono hover:underline"
+                >
+                  MAX
+                </button>
               </div>
-
-              {/* Arrow */}
-              <div className="flex justify-center">
-                <ArrowDownUp className="h-5 w-5 text-gray-500" />
-              </div>
-
-              {/* Output info */}
-              <div className="rounded-xl bg-[#0D0D1A] p-4 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">
-                    {tab === "deposit" ? "You receive" : "You receive"}
-                  </span>
-                  <span className="font-medium">
-                    {tab === "deposit"
-                      ? `${shares} T-BillFlow Shares`
-                      : `${amount ? (parseFloat(amount) * SHARE_RATE).toFixed(2) : "0.00"} tBUSD`}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Exchange rate</span>
-                  <span>1 Share = {SHARE_RATE} tBUSD</span>
-                </div>
-                {tab === "deposit" && (
-                  <div className="flex justify-between text-[#F0B90B]">
-                    <span>Projected 1-year yield</span>
-                    <span>+${yearlyYield}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-gray-400">APY</span>
-                  <span className="text-gradient font-semibold">{APY}%</span>
-                </div>
-              </div>
-
-              <Button
-                className="w-full h-12 gradient-gold text-[#1E1E1E] font-semibold text-base hover:opacity-90 gold-glow"
-                onClick={() => handleSubmit(tab)}
-                disabled={status === "pending" || !amount}
-              >
-                {status === "pending" ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Waiting for BNB Chain...
-                  </span>
-                ) : tab === "deposit" ? "Deposit & Mint Shares" : "Redeem Shares"}
-              </Button>
             </div>
+
+            <div className="rounded-lg bg-[#0E1013] border border-[#1E2229] p-3 text-xs space-y-1.5 font-mono text-gray-400">
+              <div className="flex justify-between">
+                <span>{tab === "deposit" ? "Shares to Receive:" : "tBUSD to Receive:"}</span>
+                <span className="text-white font-medium">{shares}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Estimated Yield:</span>
+                <span className="text-emerald-400">~${yearlyYield} / year ({APY}%)</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Settlement Speed:</span>
+                <span className="text-gray-300">T+0 Instant</span>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => handleSubmit(tab)}
+              disabled={status === "pending" || !amount || parseFloat(amount) <= 0}
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs py-2.5"
+            >
+              {status === "pending" ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Processing transaction...
+                </span>
+              ) : tab === "deposit" ? (
+                "Deposit & Mint Shares"
+              ) : (
+                "Redeem Shares"
+              )}
+            </Button>
           </TabsContent>
         ))}
       </Tabs>
 
-      {/* Success dialog */}
+      {/* Success Dialog */}
       <Dialog open={status === "success"} onOpenChange={() => setStatus("idle")}>
-        <DialogContent className="bg-[#141422] border-[#2A2A3E] text-white">
+        <DialogContent className="bg-[#121418] border-[#1E2229] text-white">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <CheckCircle2 className="h-6 w-6 text-[#F0B90B]" />
-              Transaction Confirmed!
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+              Transaction Confirmed
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="space-y-3 py-2 text-xs">
             <p className="text-gray-400">
-              Your deposit was successful. Your T-BillFlow Shares are now earning yield.
+              Your transaction was successfully processed by TBillVault.
             </p>
-            <div className="rounded-xl bg-[#0D0D1A] p-4 text-sm">
-              <div className="text-gray-400 mb-1">Transaction Hash</div>
-              <div className="font-mono text-xs break-all text-gray-300">{txHash}</div>
+            <div className="rounded bg-[#0A0B0D] p-3 border border-[#1E2229] font-mono">
+              <div className="text-gray-500 text-[10px] mb-0.5">Tx Hash</div>
+              <div className="text-gray-300 text-xs break-all">{txHash}</div>
             </div>
             <a
-              href={`${BSCSCAN_BASE}/tx/${txHash}`}
+              href={`https://sepolia.arbiscan.io/tx/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#F0B90B]/30 bg-[#F0B90B]/10 py-3 text-sm font-medium text-[#F0B90B] hover:bg-[#F0B90B]/20 transition-colors"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded bg-[#181B20] border border-[#2A303A] py-2 text-xs text-blue-400 hover:text-white transition-colors"
             >
-              View on BscScan <ExternalLink className="h-4 w-4" />
+              View on Arbiscan <ExternalLink className="h-3 w-3" />
             </a>
           </div>
         </DialogContent>
@@ -191,18 +154,13 @@ function DepositContent() {
 
 export default function DepositPage() {
   return (
-    <div className="min-h-screen px-4 pt-24 pb-16">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-10 text-center">
-          <h1 className="text-3xl font-bold">Deposit &amp; Withdraw</h1>
-          <p className="mt-2 text-gray-400">
-            Deposit tBUSD to mint T-BillFlow Shares, or redeem shares for tBUSD.
-          </p>
-        </div>
-        <Suspense fallback={null}>
-          <DepositContent />
-        </Suspense>
-      </div>
-    </div>
+    <AppShell
+      title="Direct Vault Interactions"
+      subtitle="ERC-4626 Direct Mint & Redemption for Authorized Liquidity Providers"
+    >
+      <Suspense fallback={null}>
+        <DepositContent />
+      </Suspense>
+    </AppShell>
   );
 }

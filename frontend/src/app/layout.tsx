@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Web3Provider } from "@/components/Web3Provider";
-import Navbar from "@/components/Navbar";
+import { ModeProvider } from "@/context/ModeContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "T-BillFlow — Earn US Treasury Yield on BNB Chain",
+  title: "T-BillFlow 2.0 — RWA-Aware Agent Execution Layer",
   description:
-    "Deposit tBUSD and automatically earn 5% APY from tokenized US Treasury Bills. OndoFinance for BNB retail.",
+    "Arbitrum-native RWA-aware execution layer for tokenized US Treasury yield. Authorization ≠ Eligibility.",
 };
 
 export default function RootLayout({
@@ -21,8 +21,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
         <Web3Provider>
-          <Navbar />
-          <main>{children}</main>
+          <ModeProvider>
+            {children}
+          </ModeProvider>
         </Web3Provider>
       </body>
     </html>

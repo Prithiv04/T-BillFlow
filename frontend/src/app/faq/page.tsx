@@ -1,85 +1,59 @@
+"use client";
+
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ExternalLink } from "lucide-react";
-import { BSCSCAN_BASE, TBILLFLOW_CONTRACT, APY } from "@/lib/constants";
+import { AppShell } from "@/components/layout/AppShell";
 
 const FAQS = [
   {
-    q: "What are T-BillFlow Shares?",
-    a: "When you deposit tBUSD into the vault, you receive T-BillFlow Shares — BEP-20 tokens on BNB Chain. These shares represent your proportional ownership in the underlying US Treasury Bill portfolio. Unlike interest-bearing tokens that accumulate tokens in your wallet, your shares simply grow in value over time.",
+    q: "What is T-BillFlow 2.0?",
+    a: "T-BillFlow 2.0 is an Arbitrum-native, RWA-aware agent execution layer. It bridges autonomous off-chain AI agents with tokenized Real-World Assets (such as US Treasury Bills) while enforcing the core principle: Authorization ≠ Eligibility.",
   },
   {
-    q: "How does the yield accrue?",
-    a: `The yield is not paid out as new tokens — instead, the value of your T-BillFlow Shares increases relative to tBUSD. The protocol targets ${APY}% APY, which mirrors current short-term US Treasury Bill rates. When you eventually redeem your shares, you receive more tBUSD than you deposited.`,
+    q: "What does 'Authorization ≠ Eligibility' mean?",
+    a: "An off-chain agent can hold valid delegated authority (signed via an EIP-712 mandate) to execute actions like deposits or allocations. However, if the underlying RWA condition is not eligible (e.g. NAV is stale, redemption is closed, or liquidity is insufficient), the on-chain AgentExecutionGate halts and reverts execution.",
   },
   {
-    q: "Can I trade my shares on PancakeSwap?",
-    a: "Yes! T-BillFlow Shares are standard BEP-20 tokens and are fully composable. You can provide liquidity or swap them instantly on PancakeSwap without waiting for the protocol's own withdrawal period. This means you can exit your position at any time at market price.",
+    q: "What are the four core contracts?",
+    a: "1. AgentMandateRegistry.sol (manages EIP-712 delegated authority, nonces, and cumulative caps). 2. RWAStateOracle.sol (tracks NAV price, freshness timestamps, redemption status, and liquidity tiers). 3. AgentExecutionGate.sol (the central execution boundary validating both authority and eligibility). 4. TBillVault.sol (ERC-4626 vault holding tokenized assets and minting shares).",
   },
   {
-    q: "What is the current exchange rate between tBUSD and Shares?",
-    a: "The exchange rate starts at 1 Share = 1 tBUSD and increases as yield accrues. You can always check the current rate on the Deposit page or the Dashboard. The rate is calculated directly from the on-chain vault contract and is updated every block.",
+    q: "How does the autonomous agent operate?",
+    a: "The agent (implemented in Python) continuously polls synthetic yield opportunities. When current opportunity yield exceeds the configured threshold (e.g. 5.0%), the agent queries RWAStateOracle and AgentMandateRegistry, verifies canExecute() on the gate, and submits the transaction. The agent never calls the vault directly.",
   },
   {
-    q: "Is my money safe?",
-    a: "T-BillFlow smart contracts are open-source and verified on BscScan. The underlying assets are held by a bankruptcy-remote legal entity invested strictly in short-duration US Treasury Bills — the safest asset class in the world. Smart contract risk is mitigated through third-party audits.",
+    q: "Is there physical custody of US Treasuries in this version?",
+    a: "No. V1 uses a simulated tokenized-T-Bill environment (USTB) on Arbitrum Sepolia for transparent demonstration and hackathon validation. It does not represent custody of real U.S. Treasury securities.",
   },
   {
-    q: "Why BNB Chain?",
-    a: "BNB Chain provides the ideal combination of security, liquidity, and low transaction fees. Gas fee barriers on Ethereum make small deposits uneconomical. BNB Chain makes institutional-grade yield accessible to retail users with deposits starting from ~$10.",
-  },
-  {
-    q: "How do I verify transactions on-chain?",
-    a: "Every deposit and withdrawal generates a verifiable on-chain transaction. You can view all transactions, the vault contract, and token holders directly on BscScan. Links to relevant pages are available throughout the T-BillFlow interface.",
-  },
-  {
-    q: "What happens if I want to exit quickly?",
-    a: "You have two options: (1) Use the Withdraw page to redeem shares directly from the vault — usually processed within 1–2 blocks. (2) Sell your shares instantly on PancakeSwap at the current market price, which may vary slightly from the vault exchange rate.",
+    q: "How do I verify executions on-chain?",
+    a: "All gate decisions, whether allowed or blocked, emit on-chain events. Allowed executions create verifiable transaction hashes on Arbitrum Sepolia that can be inspected on Arbiscan.",
   },
 ];
 
 export default function FaqPage() {
   return (
-    <div className="min-h-screen px-4 pt-24 pb-16">
-      <div className="mx-auto max-w-3xl">
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold mb-3">Frequently Asked Questions</h1>
-          <p className="text-gray-400">
-            Everything you need to know about T-BillFlow and tokenized US Treasury Bills on BNB Chain.
-          </p>
-        </div>
-
+    <AppShell
+      title="Architecture FAQ & Principles"
+      subtitle="Institutional Architecture, Security Model & RWA Execution Boundaries"
+    >
+      <div className="panel max-w-3xl mx-auto p-6">
         <Accordion className="space-y-3">
           {FAQS.map((faq, i) => (
             <AccordionItem
               key={i}
               value={`item-${i}`}
-              className="card-glass rounded-xl border-[#2A2A3E] px-6 data-[state=open]:border-[#F0B90B]/30"
+              className="rounded-lg border border-[#1E2229] bg-[#0E1013] px-4 data-[state=open]:border-blue-500/40"
             >
-              <AccordionTrigger className="text-left font-medium hover:text-[#F0B90B] hover:no-underline py-5">
+              <AccordionTrigger className="text-left font-medium text-xs text-white hover:text-blue-400 hover:no-underline py-3.5">
                 {faq.q}
               </AccordionTrigger>
-              <AccordionContent className="text-gray-400 leading-relaxed pb-5">
+              <AccordionContent className="text-xs text-gray-400 pb-3.5 leading-relaxed font-sans">
                 {faq.a}
               </AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>
-
-        {/* Contract footer */}
-        <div className="mt-12 card-glass rounded-2xl p-6 text-center">
-          <p className="text-sm text-gray-400 mb-3">
-            Still have questions? Verify everything on-chain yourself.
-          </p>
-          <a
-            href={`${BSCSCAN_BASE}/address/${TBILLFLOW_CONTRACT}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl border border-[#F0B90B]/30 bg-[#F0B90B]/10 px-6 py-3 text-sm font-medium text-[#F0B90B] hover:bg-[#F0B90B]/20 transition-colors"
-          >
-            View Vault Contract on BscScan <ExternalLink className="h-4 w-4" />
-          </a>
-        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

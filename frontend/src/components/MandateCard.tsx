@@ -2,88 +2,105 @@
 
 import React from 'react';
 import { mockMandate } from '@/mocks/data';
-import { FileCheck, Shield, AlertCircle } from 'lucide-react';
+import { FileCheck2, CheckCircle2, ShieldX, KeyRound } from 'lucide-react';
+import { ADDRESSES } from '@/config';
 
 export function MandateCard() {
-  const usedPercent = Math.min(100, Math.round((mockMandate.used / mockMandate.maxCumulative) * 100));
+  const percentUsed =
+    mockMandate.maxCumulative > 0
+      ? Math.min(100, (mockMandate.used / mockMandate.maxCumulative) * 100)
+      : 0;
 
   return (
-    <div className="card-glass rounded-2xl p-6 flex flex-col justify-between">
+    <div className="panel p-5 flex flex-col justify-between">
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <FileCheck className="h-5 w-5 text-[#F0B90B]" />
-            Agent Mandate Registry
-          </h2>
-          <span className="text-xs px-2.5 py-1 rounded-full bg-white/5 text-gray-400 font-mono border border-white/10">
+        <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#1E2229]">
+          <div className="flex items-center gap-2">
+            <FileCheck2 className="h-4 w-4 text-blue-400" />
+            <h2 className="text-sm font-semibold text-white tracking-tight">Agent Mandate Registry</h2>
+          </div>
+          <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#181B20] text-gray-400 border border-[#2A303A]">
             AgentMandateRegistry.sol
           </span>
         </div>
 
-        <div className="grid gap-3 text-sm">
-          <div className="flex justify-between items-center py-1 border-b border-white/5">
+        <div className="space-y-3 text-xs">
+          <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
             <span className="text-gray-400">Designated Agent</span>
-            <span className="font-mono text-xs text-[#F0B90B] bg-[#F0B90B]/10 px-2 py-0.5 rounded">
-              {mockMandate.agent}
-            </span>
+            <span className="font-mono text-gray-200">{mockMandate.agent}</span>
           </div>
 
-          <div className="flex justify-between items-center py-1 border-b border-white/5">
+          <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
             <span className="text-gray-400">Allowed Action</span>
-            <span className="font-mono text-xs font-semibold text-white bg-white/10 px-2 py-0.5 rounded">
-              {mockMandate.allowedAction}
+            <span className="font-mono font-medium text-emerald-400">{mockMandate.allowedAction}</span>
+          </div>
+
+          <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
+            <span className="text-gray-400">Per-Tx Limit</span>
+            <span className="font-mono text-white">
+              ${mockMandate.maxTx.toLocaleString()} tBUSD
             </span>
           </div>
 
-          <div className="flex justify-between items-center py-1 border-b border-white/5">
-            <span className="text-gray-400">Max Per-Tx Limit</span>
-            <span className="font-mono font-medium text-white">
-              ${mockMandate.maxTx.toLocaleString()}
-            </span>
-          </div>
-
-          <div className="flex justify-between items-center py-1 border-b border-white/5">
+          <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
             <span className="text-gray-400">Cumulative Budget</span>
-            <span className="font-mono font-medium text-white">
-              ${mockMandate.maxCumulative.toLocaleString()}
+            <span className="font-mono text-white">
+              ${mockMandate.maxCumulative.toLocaleString()} tBUSD
             </span>
           </div>
 
-          <div className="py-1 border-b border-white/5 space-y-1.5">
-            <div className="flex justify-between text-xs text-gray-400">
-              <span>Budget Utilized</span>
-              <span className="font-mono text-white">
-                ${mockMandate.used.toLocaleString()} ({usedPercent}%)
+          {/* Budget Utilized Progress */}
+          <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229] space-y-1.5">
+            <div className="flex justify-between text-xs">
+              <span className="text-gray-400">Budget Utilized:</span>
+              <span className="font-mono font-medium text-white">
+                ${mockMandate.used.toLocaleString()} ({percentUsed.toFixed(0)}%)
               </span>
             </div>
-            <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+            <div className="w-full bg-[#181B20] h-1.5 rounded-full overflow-hidden">
               <div
-                className={`h-full transition-all duration-500 ${
-                  usedPercent >= 100 ? 'bg-red-500' : 'bg-[#F0B90B]'
+                className={`h-full transition-all duration-300 ${
+                  percentUsed >= 100
+                    ? 'bg-rose-500'
+                    : percentUsed > 75
+                    ? 'bg-amber-500'
+                    : 'bg-emerald-500'
                 }`}
-                style={{ width: `${usedPercent}%` }}
+                style={{ width: `${percentUsed}%` }}
               />
             </div>
           </div>
 
-          <div className="flex justify-between items-center py-1">
+          <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
             <span className="text-gray-400">Mandate Status</span>
-            {mockMandate.revoked ? (
-              <span className="text-red-400 font-medium flex items-center gap-1">
-                <AlertCircle className="h-3.5 w-3.5" /> Revoked
-              </span>
-            ) : (
-              <span className="text-green-400 font-medium flex items-center gap-1">
-                <Shield className="h-3.5 w-3.5" /> Active & Valid
-              </span>
-            )}
+            <span
+              className={`inline-flex items-center gap-1 font-mono text-[11px] px-2 py-0.5 rounded ${
+                !mockMandate.revoked
+                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+              }`}
+            >
+              {!mockMandate.revoked ? (
+                <>
+                  <CheckCircle2 className="h-3 w-3" /> Active & Valid
+                </>
+              ) : (
+                <>
+                  <ShieldX className="h-3 w-3" /> Revoked
+                </>
+              )}
+            </span>
           </div>
         </div>
       </div>
 
-      <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-gray-500">
-        <span>Signature: EIP-712 Verified</span>
-        <span>Nonce: 0</span>
+      <div className="pt-3 border-t border-[#1E2229] mt-3 flex items-center justify-between text-[11px] text-gray-500 font-mono">
+        <span className="flex items-center gap-1">
+          <KeyRound className="h-3 w-3 text-blue-400" /> EIP-712 Nonce: 0
+        </span>
+        <span className="truncate max-w-[140px] text-gray-400">
+          {ADDRESSES.registry.slice(0, 8)}...{ADDRESSES.registry.slice(-6)}
+        </span>
       </div>
     </div>
   );

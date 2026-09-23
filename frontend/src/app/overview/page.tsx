@@ -2,6 +2,6 @@
 
 import OverviewPage from '../page';
 
-export default function DashboardRoute() {
+export default function OverviewRoute() {
   return <OverviewPage />;
 }
