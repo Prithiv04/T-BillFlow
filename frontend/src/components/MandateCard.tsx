@@ -107,7 +107,7 @@ function DemoMandateCard() {
 function LiveMandateCard() {
   const mandate = useLiveMandate(DEMO_MANDATE_ID);
 
-  const isZeroId = DEMO_MANDATE_ID === '0x0000000000000000000000000000000000000000000000000000000000000000';
+  const isZeroId = (DEMO_MANDATE_ID as string) === '0x0000000000000000000000000000000000000000000000000000000000000000';
 
   const fmtUSDC = (v: bigint) =>
     isZeroId ? 'Unavailable' : `$${Number(formatUnits(v, 6)).toLocaleString()} tBUSD`;

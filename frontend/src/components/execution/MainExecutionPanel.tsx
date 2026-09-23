@@ -192,8 +192,8 @@ function LiveExecutionPanel({ onExecuted }: MainExecutionPanelProps) {
     isPaused,
   } = useLiveGate(DEMO_MANDATE_ID);
 
-  // 250,000 tBUSD (18 decimals)
-  const DEPOSIT_AMOUNT = 250_000_000_000_000_000_000_000n;
+  // 250,000 MockUSDC (6 decimals)
+  const DEPOSIT_AMOUNT = 250_000_000_000n;
 
   const handleExecute = async () => {
     await executeDeposit(DEPOSIT_AMOUNT);

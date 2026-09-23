@@ -13,8 +13,10 @@ import { resetDemo } from '@/mocks/data';
 import { Wallet, ShieldCheck, TrendingUp, Bot } from 'lucide-react';
 import { useCanExecute } from '@/hooks/useCanExecute';
 import { APY } from '@/lib/constants';
+import { useMode } from '@/context/ModeContext';
 
 export default function OverviewPage() {
+  const { isDemo } = useMode();
   const [, setTick] = useState(0);
   const [activeScenario, setActiveScenario] = useState<ScenarioType>('valid');
   const { canExecute } = useCanExecute();
@@ -83,15 +85,26 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* 2. Demo Scenario Harness */}
-      <DemoScenarioBar
-        activeScenario={activeScenario}
-        onScenarioChange={(sc) => {
-          setActiveScenario(sc);
-          refresh();
-        }}
-        onReset={handleReset}
-      />
+      {/* 2. Demo Scenario Harness (Demo mode only) or Live Mode Banner */}
+      {isDemo ? (
+        <DemoScenarioBar
+          activeScenario={activeScenario}
+          onScenarioChange={(sc) => {
+            setActiveScenario(sc);
+            refresh();
+          }}
+          onReset={handleReset}
+        />
+      ) : (
+        <div className="flex items-center justify-between p-4 mb-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="font-semibold text-emerald-400">LIVE ARBITRUM SEPOLIA MODE</span>
+            <span className="text-gray-400">— Reading real on-chain state from AgentExecutionGate, RWAStateOracle & MandateRegistry.</span>
+          </div>
+          <div className="text-gray-500 font-mono">Chain ID: 421614</div>
+        </div>
+      )}
 
       {/* 3. Main Operational Panels: Gate & RWA/Mandate details */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

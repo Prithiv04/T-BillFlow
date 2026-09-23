@@ -27,7 +27,7 @@ export const BSCSCAN_BASE         = EXPLORER_URL;
 // Used by the live gate hook to construct ExecutionRequests.
 // If no mandate exists on-chain, live mode gracefully shows "Unavailable".
 export const DEMO_MANDATE_ID =
-  '0x0000000000000000000000000000000000000000000000000000000000000000' as const;
+  '0x2a8a21a89050bb2f5ca9e5e0591e84d6cd8516f26968d1e8421be0e2ddd28970' as const;
 
 // ── Action bitmask constants (mirrors Types.sol Actions library) ──────────────
 export const ACTION_DEPOSIT  = 1n;  // 1 << 0

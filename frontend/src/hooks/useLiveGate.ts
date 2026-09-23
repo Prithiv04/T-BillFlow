@@ -98,7 +98,7 @@ function decodeGateError(reason: `0x${string}` | Uint8Array): string {
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 export function useLiveGate(
   mandateId: `0x${string}` = DEMO_MANDATE_ID,
-  amountWei: bigint = 250_000_000_000_000_000_000_000n,
+  amountWei: bigint = 250_000_000_000n, // 250,000 MockUSDC (6 decimals)
 ): LiveGateState {
   const { address } = useAccount();
   const [txStatus, setTxStatus]   = useState<TxStatus>('idle');
