@@ -2,7 +2,7 @@
 
 import { useVault } from "@/hooks/useVault";
 import { formatUnits } from "viem";
-import { APY, SHARE_RATE } from "@/lib/constants";
+import { APY } from "@/lib/constants";
 
 export default function LiveStats() {
   const { tvl } = useVault();

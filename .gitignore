@@ -43,6 +43,20 @@ broadcast/
 # Testing & Coverage
 coverage/
 *.lcov
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
 
 # TypeScript build info
 *.tsbuildinfo

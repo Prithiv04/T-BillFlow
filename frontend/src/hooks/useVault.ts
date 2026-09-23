@@ -1,4 +1,4 @@
-import { useReadContract, useWriteContract, useAccount, useWaitForTransactionReceipt } from 'wagmi';
+import { useReadContract, useWriteContract, useAccount } from 'wagmi';
 import { TBILL_VAULT_ADDRESS, TBUSD_ADDRESS } from '@/lib/constants';
 import { tbillVaultAbi } from '@/abis/tbillVaultAbi';
 import { erc20Abi } from '@/abis/erc20Abi';

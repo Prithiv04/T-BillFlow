@@ -1,30 +1,60 @@
 "use client";
 
-import { useAccount } from "wagmi";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import Link from "next/link";
-import NumberTicker from "@/components/NumberTicker";
-import { ArrowRight, TrendingUp, Wallet, BarChart3, ExternalLink } from "lucide-react";
-import { APY, BSCSCAN_BASE, TBILLFLOW_CONTRACT, SHARE_RATE } from "@/lib/constants";
-import { useVault } from "@/hooks/useVault";
-import { formatUnits } from "viem";
-import { RwaStateCard } from "@/components/RwaStateCard";
-import { MandateCard } from "@/components/MandateCard";
-import { ExecutionGatePreview } from "@/components/ExecutionGatePreview";
-import { TransactionHistory } from "@/components/TransactionHistory";
+import React, { useState, useCallback } from 'react';
+import { useAccount } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import Link from 'next/link';
+import NumberTicker from '@/components/NumberTicker';
+import { ArrowRight, TrendingUp, Wallet, BarChart3, ExternalLink, Sparkles, RefreshCw } from 'lucide-react';
+import { APY, BSCSCAN_BASE, SHARE_RATE } from '@/lib/constants';
+import { useVault } from '@/hooks/useVault';
+import { formatUnits } from 'viem';
+import { RwaStateCard } from '@/components/RwaStateCard';
+import { MandateCard } from '@/components/MandateCard';
+import { ExecutionGatePreview } from '@/components/ExecutionGatePreview';
+import { TransactionHistory } from '@/components/TransactionHistory';
+import {
+  loadSuccessScenario,
+  loadBlockedScenarioMaxTx,
+  loadBlockedScenarioCumulative,
+  loadBlockedScenarioStaleNav,
+  loadBlockedScenarioRedemptionClosed,
+  resetDemo,
+} from '@/mocks/data';
+
+type ScenarioType = 'valid' | 'maxTx' | 'cumulative' | 'staleNav' | 'redemptionClosed';
 
 export default function DashboardPage() {
   const { isConnected, address } = useAccount();
   const { shareBalance, tvl } = useVault();
+  const [, setRender] = useState(0);
+  const [activeScenario, setActiveScenario] = useState<ScenarioType>('valid');
+  const [isDemoMode, setIsDemoMode] = useState(false);
+
+  const refresh = useCallback(() => setRender((r) => r + 1), []);
+
+  const handleSelectScenario = (scenario: ScenarioType) => {
+    setActiveScenario(scenario);
+    if (scenario === 'valid') loadSuccessScenario();
+    else if (scenario === 'maxTx') loadBlockedScenarioMaxTx();
+    else if (scenario === 'cumulative') loadBlockedScenarioCumulative();
+    else if (scenario === 'staleNav') loadBlockedScenarioStaleNav();
+    else if (scenario === 'redemptionClosed') loadBlockedScenarioRedemptionClosed();
+    refresh();
+  };
+
+  const handleReset = () => {
+    setActiveScenario('valid');
+    resetDemo();
+    refresh();
+  };
 
   const userShares = shareBalance ? parseFloat(formatUnits(shareBalance, 18)) : 0;
   const userUsdBalance = userShares * SHARE_RATE;
-  // Real yield = appreciation above 1:1 mint price (share price > 1 tBUSD = profit)
   const yieldEarned = userShares > 0 ? userUsdBalance - userShares : 0;
-
   const tvlUsd = tvl ? parseFloat(formatUnits(tvl, 18)) : 0;
 
-  if (!isConnected) {
+  if (!isConnected && !isDemoMode) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 pt-16 px-4 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F0B90B]/10">
@@ -34,29 +64,122 @@ export default function DashboardPage() {
         <p className="max-w-sm text-gray-400">
           Connect your wallet to view your T-BillFlow dashboard and manage your positions.
         </p>
-        <ConnectButton />
+        <div className="flex flex-col items-center gap-3">
+          <ConnectButton />
+          <button
+            onClick={() => setIsDemoMode(true)}
+            className="text-xs text-[#F0B90B] hover:text-[#F0B90B]/80 underline transition-colors"
+          >
+            Or continue in Demo Mode (Autonomous Agent)
+          </button>
+        </div>
       </div>
     );
   }
 
+  const displayAddress = address
+    ? `${address.slice(0, 6)}...${address.slice(-4)}`
+    : '0xDeployer...Demo';
+
   return (
     <div className="min-h-screen px-4 pt-24 pb-16">
       <div className="mx-auto max-w-5xl">
+        {/* Hackathon Demo Control Bar */}
+        <div className="card-glass rounded-2xl p-5 mb-8 border border-[#F0B90B]/20 bg-gradient-to-r from-[#F0B90B]/5 via-transparent to-transparent">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-[#F0B90B]" />
+                <span className="text-xs uppercase font-bold tracking-wider text-[#F0B90B]">
+                  Agent Execution Scenarios
+                </span>
+              </div>
+              <h2 className="text-sm font-semibold text-white mt-0.5">
+                Deterministic Agent Execution Scenarios
+              </h2>
+            </div>
+            <button
+              onClick={handleReset}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-300 transition-colors border border-white/10 self-start md:self-auto"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Reset Demo State
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => handleSelectScenario('valid')}
+              className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                activeScenario === 'valid'
+                  ? 'bg-green-600 text-white shadow-lg shadow-green-600/30'
+                  : 'bg-white/5 text-gray-300 hover:bg-white/10'
+              }`}
+            >
+              Case 1: Valid Execution (Allowed)
+            </button>
+
+            <button
+              onClick={() => handleSelectScenario('maxTx')}
+              className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                activeScenario === 'maxTx'
+                  ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                  : 'bg-white/5 text-gray-300 hover:bg-white/10'
+              }`}
+            >
+              Case 2: Exceeds Max Tx (Blocked)
+            </button>
+
+            <button
+              onClick={() => handleSelectScenario('cumulative')}
+              className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                activeScenario === 'cumulative'
+                  ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                  : 'bg-white/5 text-gray-300 hover:bg-white/10'
+              }`}
+            >
+              Case 3: Cumulative Budget (Blocked)
+            </button>
+
+            <button
+              onClick={() => handleSelectScenario('staleNav')}
+              className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                activeScenario === 'staleNav'
+                  ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30'
+                  : 'bg-white/5 text-gray-300 hover:bg-white/10'
+              }`}
+            >
+              Case 4: Stale NAV (Authorization ≠ Eligibility)
+            </button>
+
+            <button
+              onClick={() => handleSelectScenario('redemptionClosed')}
+              className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                activeScenario === 'redemptionClosed'
+                  ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                  : 'bg-white/5 text-gray-300 hover:bg-white/10'
+              }`}
+            >
+              Case 5: Redemption Closed (Blocked)
+            </button>
+          </div>
+        </div>
+
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="mt-1 text-sm text-gray-400">
-              {address?.slice(0, 6)}...{address?.slice(-4)}
+            <p className="mt-1 text-sm text-gray-400 font-mono">
+              {displayAddress}
             </p>
           </div>
           <a
-            href={`${BSCSCAN_BASE}/address/${address}`}
-            target="_blank"
+            href={address ? `${BSCSCAN_BASE}/address/${address}` : '#'}
+            target={address ? '_blank' : undefined}
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-[#F0B90B]"
           >
-            View on BscScan <ExternalLink className="h-3 w-3" />
+            View on Explorer <ExternalLink className="h-3 w-3" />
           </a>
         </div>
 
@@ -119,7 +242,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Protocol Stats */}
-        <div className="card-glass rounded-2xl p-6">
+        <div className="card-glass rounded-2xl p-6 mb-8">
           <h2 className="mb-4 text-lg font-semibold">Protocol Stats</h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {[
@@ -135,14 +258,15 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 mt-8">
+
+        {/* RWA Execution & Mandate Controls */}
+        <div className="grid gap-6 md:grid-cols-2 mb-8">
+          <ExecutionGatePreview onExecuted={refresh} />
           <RwaStateCard />
           <MandateCard />
-          <ExecutionGatePreview />
           <TransactionHistory />
         </div>
-
-        </div>
       </div>
+    </div>
   );
 }
