@@ -39,6 +39,7 @@ class OffChainAgent:
         self.gate = None if config.MOCK_MODE else contracts.AgentExecutionGate(config.GATE_ADDRESS, self.w3)
         self.oracle = None if config.MOCK_MODE else contracts.RWAStateOracle(config.ORACLE_ADDRESS, self.w3)
         self.vault = None if config.MOCK_MODE else contracts.TBillVault(config.VAULT_ADDRESS, self.w3)
+        self.registry = None if config.MOCK_MODE else contracts.AgentMandateRegistry(config.MANDATE_REGISTRY_ADDRESS, self.w3)
 
     # ---------------------------------------------------------------------
     # Helper checks
@@ -60,9 +61,29 @@ class OffChainAgent:
         return eligible
 
     def _mandate_valid(self) -> bool:
-        # Placeholder – in a real deployment this would query a registry.
-        logger.info("Mandate validation placeholder – assuming valid")
-        return True
+        # Query the on-chain AgentMandateRegistry to validate the mandate.
+        if config.MOCK_MODE:
+            logger.info("Mock mode – mandate validation assumed true")
+            return True
+        try:
+            # Load mandate ID from config; ensure it's provided.
+            mandate_id = config.MANDATE_ID
+            if not mandate_id:
+                logger.warning("Mandate ID not set in config – skipping validation")
+                return False
+            # Derive the caller (agent) address from the private key.
+            acct = self.w3.eth.account.from_key(config.PRIVATE_KEY)
+            # Use vault address as target, placeholder action and amount (0).
+            target = config.VAULT_ADDRESS
+            action = 0
+            amount = 0
+            # Call the view function; it will revert if invalid.
+            self.registry.validate_mandate(mandate_id, acct.address, target, action, amount)
+            logger.info("Mandate validation succeeded on-chain")
+            return True
+        except Exception as e:
+            logger.error(f"Mandate validation failed: {e}")
+            return False
 
     def _can_execute(self, request: Dict[str, Any]) -> bool:
         if config.MOCK_MODE:

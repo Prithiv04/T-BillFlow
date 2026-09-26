@@ -12,6 +12,8 @@ PRIVATE_KEY = os.getenv("PRIVATE_KEY")
 # Contract addresses (must be set after deployment)
 GATE_ADDRESS = os.getenv("AGENT_EXECUTION_GATE_ADDRESS")
 VAULT_ADDRESS = os.getenv("TBILL_VAULT_ADDRESS")
+MANDATE_REGISTRY_ADDRESS = os.getenv("AGENT_MANDATE_REGISTRY_ADDRESS")
+MANDATE_ID = os.getenv("MANDATE_ID")
 ORACLE_ADDRESS = os.getenv("RWA_STATE_ORACLE_ADDRESS")
 ASSET_ADDRESS = os.getenv("RWA_ASSET_ADDRESS")  # asset id for oracle eligibility
 

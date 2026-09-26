@@ -87,3 +87,16 @@ class TBillVault(BaseContract):
     def get_yield(self) -> int:
         # Placeholder – actual yield logic is contract‑specific.
         return self.contract.functions.getCurrentYield().call()
+
+
+class AgentMandateRegistry(BaseContract):
+    def __init__(self, address: str, w3: Web3):
+        super().__init__(address, "AgentMandateRegistry", w3)
+
+    def validate_mandate(self, mandate_id: str, agent: str, target: str, action: int, amount: int) -> None:
+        """Call the read‑only validateMandate function.
+        It will raise if the mandate is invalid; otherwise returns None.
+        """
+        # The Solidity function is `validateMandate(bytes32, address, address, uint256, uint256)`
+        self.contract.functions.validateMandate(mandate_id, agent, target, action, amount).call()
+
