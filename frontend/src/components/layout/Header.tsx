@@ -13,7 +13,7 @@ interface HeaderProps {
 }
 
 export function Header({ title, subtitle }: HeaderProps) {
-  const { mode, setMode, isDemo } = useMode();
+  const { setMode, isDemo } = useMode();
   const { isConnected } = useAccount();
   const { isCorrectNetwork } = useNetworkGuard();
 

@@ -10,8 +10,6 @@ import {
   Database,
   Bot,
   History,
-  Activity,
-  ShieldCheck,
   ChevronRight,
   Radio,
 } from 'lucide-react';
@@ -28,7 +26,7 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { mode, toggleMode, isDemo } = useMode();
+  const { toggleMode, isDemo } = useMode();
 
   return (
     <aside className="w-64 border-r border-[#1E2229] bg-[#0E1013] flex flex-col justify-between shrink-0 h-screen sticky top-0">
