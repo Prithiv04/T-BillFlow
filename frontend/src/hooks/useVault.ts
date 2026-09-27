@@ -28,7 +28,17 @@ export function useVault() {
     },
   });
 
-  // 3. Read User's tBUSD Balance
+  // 3. Read Vault Total Supply (shares) — polls every 10s
+  const { data: totalSupply, isLoading: isSupplyLoading, refetch: refetchSupply } = useReadContract({
+    address: TBILL_VAULT_ADDRESS,
+    abi: tbillVaultAbi,
+    functionName: 'totalSupply' as any,
+    query: {
+      refetchInterval: 10_000,
+    },
+  });
+
+  // 4. Read User's tBUSD Balance
   const { data: tbusdBalance, refetch: refetchTbusdBalance } = useReadContract({
     address: TBUSD_ADDRESS,
     abi: erc20Abi,
