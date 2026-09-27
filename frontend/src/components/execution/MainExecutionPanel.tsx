@@ -343,6 +343,26 @@ function LiveExecutionPanel({ onExecuted }: MainExecutionPanelProps) {
           </div>
         )}
 
+        {/* Decision Banner */}
+        {canExecute ? (
+          <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            <span>EXECUTION ALLOWED — All authorization & RWA eligibility passed.</span>
+          </div>
+        ) : (
+          <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/25 text-rose-400 text-xs flex items-start gap-2">
+            <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+            <div>
+              <div className="font-semibold uppercase tracking-wider">
+                EXECUTION BLOCKED — {gateReason}
+              </div>
+              <div className="text-[11px] opacity-80 mt-0.5">
+                The on-chain gate rejected the execution. Transaction will not be broadcast.
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Execute button */}
         {canExecute && !isPaused && isConnected && !isBlockedByNetwork ? (
           <button

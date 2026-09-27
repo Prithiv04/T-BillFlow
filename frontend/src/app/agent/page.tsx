@@ -5,13 +5,17 @@ import { AppShell } from '@/components/layout/AppShell';
 import { Bot, Terminal } from 'lucide-react';
 import { YIELD_THRESHOLD } from '@/config';
 import { mockYield, mockRwaState, mockMandate } from '@/mocks/data';
+import { useMode } from '@/context/ModeContext';
+import { useLiveGate } from '@/hooks/useLiveGate';
 
 export default function AgentPage() {
+  const { isDemo } = useMode();
+  const { canExecute: canExecuteLive, gateReason } = useLiveGate();
   const currentYield = mockYield;
   const isYieldOk = currentYield >= YIELD_THRESHOLD;
   const isRwaOk = !mockRwaState.isStale && mockRwaState.redemptionOpen;
   const isMandateOk = !mockMandate.revoked;
-  const isGateOk = isYieldOk && isRwaOk && isMandateOk;
+  const isGateOk = isDemo ? (isYieldOk && isRwaOk && isMandateOk) : canExecuteLive;
 
   const logs = [
     {
@@ -50,7 +54,9 @@ export default function AgentPage() {
         `canExecute() evaluation: ${isGateOk ? 'ALLOWED' : 'BLOCKED'}`,
         isGateOk
           ? 'Calldata forwarded to TBillVault: SUCCESS'
-          : 'Gate Reverted: Unauthorized or Ineligible',
+          : isDemo
+          ? 'Gate Reverted: Unauthorized or Ineligible'
+          : `Gate Reverted: ${gateReason}`,
       ],
     },
   ];

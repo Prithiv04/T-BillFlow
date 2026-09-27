@@ -2,6 +2,9 @@
 
 import React from 'react';
 import { useCanExecute } from '@/hooks/useCanExecute';
+import { useLiveGate } from '@/hooks/useLiveGate';
+import { useMode } from '@/context/ModeContext';
+import { DEMO_MANDATE_ID } from '@/lib/constants';
 import { mockMandate, mockExecutionRequest, mockTxHistory } from '@/mocks/data';
 import { ShieldCheck, ShieldAlert, CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
 
@@ -10,7 +13,18 @@ interface ExecutionGatePreviewProps {
 }
 
 export function ExecutionGatePreview({ onExecuted }: ExecutionGatePreviewProps) {
-  const { canExecute, reasons, checklist } = useCanExecute();
+  const { isDemo } = useMode();
+  const { canExecute: canExecuteDemo, reasons: reasonsDemo, checklist: checklistDemo } = useCanExecute();
+  const { canExecute: canExecuteLive, gateReason } = useLiveGate(DEMO_MANDATE_ID);
+  const canExecute = isDemo ? canExecuteDemo : canExecuteLive;
+  const reasons = isDemo ? reasonsDemo : gateReason ? [gateReason] : ['Gate blocked'];
+  const checklist = isDemo
+    ? checklistDemo
+    : [
+        { key: 'gateSim', label: 'On-Chain Gate Simulation', passed: canExecuteLive },
+        { key: 'gateStatus', label: gateReason, passed: canExecuteLive },
+      ];
+
 
   const handleExecute = () => {
     if (!canExecute) return;

@@ -12,6 +12,7 @@ import { TransactionHistory } from '@/components/TransactionHistory';
 import { resetDemo } from '@/mocks/data';
 import { Wallet, ShieldCheck, TrendingUp, Bot } from 'lucide-react';
 import { useCanExecute } from '@/hooks/useCanExecute';
+import { useLiveGate } from '@/hooks/useLiveGate';
 import { useTreasuryYield } from '@/hooks/useTreasuryYield';
 import { useMode } from '@/context/ModeContext';
 
@@ -19,7 +20,9 @@ export default function OverviewPage() {
   const { isDemo } = useMode();
   const [, setTick] = useState(0);
   const [activeScenario, setActiveScenario] = useState<ScenarioType>('valid');
-  const { canExecute } = useCanExecute();
+  const { canExecute: canExecuteDemo } = useCanExecute();
+  const { canExecute: canExecuteLive } = useLiveGate();
+  const canExecute = isDemo ? canExecuteDemo : canExecuteLive;
   const treasuryData = useTreasuryYield();
 
   const refresh = useCallback(() => {
