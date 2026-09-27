@@ -9,9 +9,11 @@ import {
 } from 'wagmi';
 import { encodeFunctionData } from 'viem';
 import { agentExecutionGateAbi } from '@/abis/agentExecutionGateAbi';
+import { agentMandateRegistryAbi } from '@/abis/agentMandateRegistryAbi';
 import { tbillVaultAbi } from '@/abis/tbillVaultAbi';
 import {
   EXECUTION_GATE_ADDRESS,
+  MANDATE_REGISTRY_ADDRESS,
   TBILL_VAULT_ADDRESS,
   TBUSD_ADDRESS,
   DEMO_MANDATE_ID,
@@ -110,18 +112,33 @@ export function useLiveGate(
 
   const isZeroMandate = mandateId === '0x0000000000000000000000000000000000000000000000000000000000000000';
 
+  // ── Read mandate to know the designated agent ────────────────────────────
+  const { data: mandateData } = useReadContract({
+    address: MANDATE_REGISTRY_ADDRESS,
+    abi: agentMandateRegistryAbi,
+    functionName: 'getMandate',
+    args: [mandateId],
+    query: {
+      enabled: !isZeroMandate,
+      refetchInterval: 30_000,
+    },
+  });
+
+  const simAgent = (mandateData?.agent || address) as `0x${string}` | undefined;
+  const receiver = (address || mandateData?.agent || '0x0000000000000000000000000000000000000000') as `0x${string}`;
+
   // ── 1. canExecuteAs() simulation ────────────────────────────────────────
-  const req = address && !isZeroMandate
-    ? buildDepositRequest(mandateId, amountWei, address)
+  const req = simAgent && !isZeroMandate
+    ? buildDepositRequest(mandateId, amountWei, receiver)
     : undefined;
 
   const { data: canExecData, isLoading: isSimulating } = useReadContract({
     address: EXECUTION_GATE_ADDRESS,
     abi: agentExecutionGateAbi,
     functionName: 'canExecuteAs',
-    args: req ? [req, address!] : undefined,
+    args: req && simAgent ? [req, simAgent] : undefined,
     query: {
-      enabled: !!req,
+      enabled: !!req && !!simAgent,
       refetchInterval: 15_000,
     },
   });
@@ -192,12 +209,10 @@ export function useLiveGate(
 
   // ── Derive canExecute / reason ───────────────────────────────────────────
   let canExecute = false;
-  let gateReason = 'Connect wallet to simulate gate';
+  let gateReason = 'Gate state unavailable';
 
   if (isZeroMandate) {
     gateReason = 'No on-chain mandate configured — use Demo mode';
-  } else if (!address) {
-    gateReason = 'Connect wallet to simulate gate';
   } else if (isSimulating) {
     gateReason = 'Querying on-chain gate...';
   } else if (canExecData !== undefined) {
@@ -209,6 +224,8 @@ export function useLiveGate(
     } else {
       gateReason = 'Gate blocked execution';
     }
+  } else if (!simAgent) {
+    gateReason = 'Connect wallet to simulate gate';
   } else {
     gateReason = 'Gate state unavailable';
   }

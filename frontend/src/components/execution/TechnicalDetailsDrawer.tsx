@@ -21,7 +21,7 @@ export function TechnicalDetailsDrawer({
   blockNumber = 14829104,
   mandateId = '0x0000000000000000000000000000000000000000000000000000000000000001',
   target = ADDRESSES.vault,
-  selector = '0xb6b55f25 (deposit(uint256,address))',
+  selector = '0x6e553f65 (deposit(uint256,address))',
   asset = 'USTB (Simulated US Treasury)',
   action = '0 (DEPOSIT)',
   amount = '250,000 tBUSD (250000000000000000000000)',

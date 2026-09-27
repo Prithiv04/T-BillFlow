@@ -131,7 +131,7 @@ export default function ExecutionsPage() {
           <TechnicalDetailsDrawer
             txHash={selectedTx}
             amount="250,000 tBUSD"
-            selector="0xb6b55f25 (deposit(uint256,address))"
+            selector="0x6e553f65 (deposit(uint256,address))"
             action="DEPOSIT"
           />
         </div>
