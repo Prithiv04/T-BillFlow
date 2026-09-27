@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.20;
 
-import "../patched/access/manager/AccessManager.sol";
+import "@openzeppelin/contracts/access/manager/AccessManager.sol";
 
 contract AccessManagerHarness is AccessManager {
     // override with a storage slot that can basically take any value.

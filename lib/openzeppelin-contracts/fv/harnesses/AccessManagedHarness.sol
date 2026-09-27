@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.20;
 
-import "../patched/access/manager/IAccessManager.sol";
-import "../patched/access/manager/AccessManaged.sol";
+import "@openzeppelin/contracts/access/manager/IAccessManager.sol";
+import "@openzeppelin/contracts/access/manager/AccessManaged.sol";
 
 contract AccessManagedHarness is AccessManaged {
     bytes internal SOME_FUNCTION_CALLDATA = abi.encodeCall(this.someFunction, ());
