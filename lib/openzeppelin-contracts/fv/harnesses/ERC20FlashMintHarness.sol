@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.20;
 
-import "../patched/token/ERC20/ERC20.sol";
-import "../patched/token/ERC20/extensions/ERC20Permit.sol";
-import "../patched/token/ERC20/extensions/ERC20FlashMint.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20FlashMint.sol";
 
 contract ERC20FlashMintHarness is ERC20, ERC20Permit, ERC20FlashMint {
     uint256 someFee;

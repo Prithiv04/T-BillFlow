@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import {AccountEIP7702WithModulesMock} from "../patched/mocks/account/AccountMock.sol";
-import {EIP712} from "../patched/utils/cryptography/EIP712.sol";
-import {EnumerableSet} from "../patched/utils/structs/EnumerableSet.sol";
+import {AccountEIP7702WithModulesMock} from "@openzeppelin/contracts/mocks/account/AccountMock.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 contract AccountHarness is AccountEIP7702WithModulesMock {
     using EnumerableSet for EnumerableSet.AddressSet;

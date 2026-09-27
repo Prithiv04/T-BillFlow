@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.20;
 
-import {ERC20Permit} from "../patched/token/ERC20/extensions/ERC20Permit.sol";
-import {ERC20Wrapper, IERC20, ERC20} from "../patched/token/ERC20/extensions/ERC20Wrapper.sol";
+import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
+import {ERC20Wrapper, IERC20, ERC20} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Wrapper.sol";
 
 contract ERC20WrapperHarness is ERC20Permit, ERC20Wrapper {
     constructor(
