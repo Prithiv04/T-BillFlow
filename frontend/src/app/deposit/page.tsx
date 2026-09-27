@@ -7,25 +7,30 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ExternalLink, CheckCircle2, Loader2 } from "lucide-react";
-import { APY, SHARE_RATE } from "@/lib/constants";
+import { SHARE_RATE } from "@/lib/constants";
 import { Suspense } from "react";
 import { parseUnits } from "viem";
 import { useVault } from "@/hooks/useVault";
 import { usePublicClient } from "wagmi";
 import { AppShell } from "@/components/layout/AppShell";
+import { useMode } from "@/context/ModeContext";
+import { useTreasuryYield } from "@/hooks/useTreasuryYield";
 
 function DepositContent() {
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get("tab") === "withdraw" ? "withdraw" : "deposit";
   const { deposit, redeem, approve, refetchAll } = useVault();
   const publicClient = usePublicClient();
+  const { isDemo } = useMode();
+  const treasuryData = useTreasuryYield();
 
   const [amount, setAmount] = useState("");
   const [status, setStatus] = useState<"idle" | "pending" | "success">("idle");
   const [txHash, setTxHash] = useState("0xabc123def456abc123def456abc123def456abc123def456abc123def456abc1");
 
   const shares = amount ? (parseFloat(amount) / SHARE_RATE).toFixed(6) : "0.000000";
-  const yearlyYield = amount ? (parseFloat(amount) * APY / 100).toFixed(2) : "0.00";
+  const activeRate = isDemo ? 6.5 : treasuryData.yield;
+  const yearlyYield = amount && activeRate !== null ? (parseFloat(amount) * activeRate / 100).toFixed(2) : null;
 
   const handleSubmit = async (tab: "deposit" | "withdraw") => {
     if (!amount || parseFloat(amount) <= 0) return;
@@ -92,7 +97,11 @@ function DepositContent() {
               </div>
               <div className="flex justify-between">
                 <span>Estimated Yield:</span>
-                <span className="text-emerald-400">~${yearlyYield} / year ({APY}%)</span>
+                <span className="text-emerald-400">
+                  {yearlyYield !== null
+                    ? `~$${yearlyYield} / year (${activeRate?.toFixed(2)}% ${isDemo ? 'Synthetic' : '3M Treasury'})`
+                    : 'Unavailable'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Settlement Speed:</span>

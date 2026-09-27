@@ -12,7 +12,7 @@ import { TransactionHistory } from '@/components/TransactionHistory';
 import { resetDemo } from '@/mocks/data';
 import { Wallet, ShieldCheck, TrendingUp, Bot } from 'lucide-react';
 import { useCanExecute } from '@/hooks/useCanExecute';
-import { APY } from '@/lib/constants';
+import { useTreasuryYield } from '@/hooks/useTreasuryYield';
 import { useMode } from '@/context/ModeContext';
 
 export default function OverviewPage() {
@@ -20,6 +20,7 @@ export default function OverviewPage() {
   const [, setTick] = useState(0);
   const [activeScenario, setActiveScenario] = useState<ScenarioType>('valid');
   const { canExecute } = useCanExecute();
+  const treasuryData = useTreasuryYield();
 
   const refresh = useCallback(() => {
     setTick((t) => t + 1);
@@ -77,11 +78,19 @@ export default function OverviewPage() {
 
         <div className="panel p-4">
           <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
-            <span>Current APY</span>
+            <span>{isDemo ? 'Current APY' : '3M U.S. Treasury Yield'}</span>
             <TrendingUp className="h-4 w-4 text-emerald-400" />
           </div>
-          <div className="text-xl font-bold font-mono text-emerald-400">{APY}%</div>
-          <div className="text-[10px] text-gray-500 font-mono mt-0.5">US Treasury 3M benchmark</div>
+          <div className="text-xl font-bold font-mono text-emerald-400">
+            {treasuryData.formattedYield}
+          </div>
+          <div className="text-[10px] text-gray-500 font-mono mt-0.5">
+            {isDemo
+              ? 'US Treasury 3M benchmark (simulated)'
+              : treasuryData.observationDate
+              ? `As of ${treasuryData.observationDate} · U.S. Treasury`
+              : 'Daily Treasury Par Yield Curve Rates'}
+          </div>
         </div>
       </div>
 

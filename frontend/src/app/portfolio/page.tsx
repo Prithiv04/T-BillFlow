@@ -6,11 +6,13 @@ import { Wallet, ArrowDownRight, ArrowUpRight, TrendingUp, Building2, CheckCircl
 import { useMode } from '@/context/ModeContext';
 import { useVault } from '@/hooks/useVault';
 import { formatUnits } from 'viem';
-import { APY, SHARE_RATE } from '@/lib/constants';
+import { useTreasuryYield } from '@/hooks/useTreasuryYield';
+import { SHARE_RATE } from '@/lib/constants';
 
 export default function PortfolioPage() {
   const { isDemo } = useMode();
   const { shareBalance, tvl } = useVault();
+  const treasuryData = useTreasuryYield();
   const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw'>('deposit');
   const [amount, setAmount] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -22,7 +24,6 @@ export default function PortfolioPage() {
   const totalValue = isDemo ? 1284320 : realShares * SHARE_RATE;
   const vaultShares = isDemo ? 1281000 : realShares;
   const availableCash = isDemo ? 320000 : 50000;
-  const currentApy = APY;
 
   const handleAction = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,9 +58,19 @@ export default function PortfolioPage() {
         </div>
 
         <div className="panel p-4">
-          <div className="text-gray-400 text-xs mb-1">Current Yield (APY)</div>
-          <div className="text-xl font-bold font-mono text-emerald-400">{currentApy}%</div>
-          <div className="text-[10px] text-gray-500 font-mono mt-0.5">US Treasury Bill benchmark</div>
+          <div className="text-gray-400 text-xs mb-1">
+            {isDemo ? 'Current Yield (APY)' : '3M U.S. Treasury Yield'}
+          </div>
+          <div className="text-xl font-bold font-mono text-emerald-400">
+            {treasuryData.formattedYield}
+          </div>
+          <div className="text-[10px] text-gray-500 font-mono mt-0.5">
+            {isDemo
+              ? 'US Treasury Bill benchmark (simulated)'
+              : treasuryData.observationDate
+              ? `As of ${treasuryData.observationDate} · U.S. Treasury`
+              : 'Daily Treasury Par Yield Curve Rates'}
+          </div>
         </div>
 
         <div className="panel p-4">
