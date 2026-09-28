@@ -166,12 +166,12 @@ export default function OverviewPage() {
         />
       ) : (
         <div className="flex items-center justify-between p-4 mb-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="font-semibold text-emerald-400">LIVE ARBITRUM SEPOLIA MODE</span>
-            <span className="text-gray-400">— Reading real on-chain state from AgentExecutionGate, RWAStateOracle & MandateRegistry.</span>
+            <span className="text-gray-400">— Reading live on-chain protocol state. RWA eligibility data is supplied by the testnet oracle.</span>
           </div>
-          <div className="text-gray-500 font-mono">Chain ID: 421614</div>
+          <div className="text-gray-500 font-mono shrink-0">Chain ID: 421614</div>
         </div>
       )}
 

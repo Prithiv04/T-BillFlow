@@ -116,11 +116,14 @@ function LiveRwaStateCard() {
     <div className="panel p-5 flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#1E2229]">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Database className="h-4 w-4 text-amber-400" />
-            <h2 className="text-sm font-semibold text-white tracking-tight">RWA State Oracle</h2>
+            <h2 className="text-sm font-semibold text-white tracking-tight">RWA State Oracle · Testnet</h2>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181B20] text-gray-400 border border-[#2A303A]">
+              Simulated RWA state · on-chain
+            </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {state.isLoading && <Loader2 className="h-3 w-3 animate-spin text-gray-400" />}
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
               LIVE
@@ -134,11 +137,16 @@ function LiveRwaStateCard() {
             <span className="font-mono font-medium text-white">tBUSD (MockUSDC)</span>
           </div>
 
-          <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
-            <span className="text-gray-400">NAV (on-chain)</span>
-            <span className={`font-mono font-medium ${state.isError ? 'text-gray-500 italic' : 'text-white'}`}>
-              {navDisplay}
-            </span>
+          <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Oracle NAV</span>
+              <span className={`font-mono font-medium ${state.isError ? 'text-gray-500 italic' : 'text-white'}`}>
+                {navDisplay}
+              </span>
+            </div>
+            <div className="text-[10px] text-gray-500 mt-1">
+              On-chain value supplied by the testnet RWA oracle
+            </div>
           </div>
 
           <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
@@ -167,26 +175,36 @@ function LiveRwaStateCard() {
             </span>
           </div>
 
-          <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
-            <span className="text-gray-400">Redemption Window</span>
-            <span
-              className={`px-2 py-0.5 rounded text-[11px] font-mono font-medium ${
-                state.isError
-                  ? 'text-gray-500 italic'
-                  : state.redemptionOpen
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                  : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-              }`}
-            >
-              {state.isError ? 'Unavailable' : state.redemptionOpen ? 'OPEN' : 'CLOSED'}
-            </span>
+          <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Redemption Window</span>
+              <span
+                className={`px-2 py-0.5 rounded text-[11px] font-mono font-medium ${
+                  state.isError
+                    ? 'text-gray-500 italic'
+                    : state.redemptionOpen
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                }`}
+              >
+                {state.isError ? 'Unavailable' : state.redemptionOpen ? 'OPEN' : 'CLOSED'}
+              </span>
+            </div>
+            <div className="text-[10px] text-gray-500 mt-1">
+              Oracle-reported · simulated testnet state
+            </div>
           </div>
 
-          <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
-            <span className="text-gray-400">Liquidity Tier</span>
-            <span className="font-mono text-gray-300">
-              {state.isError ? 'Unavailable' : `Tier ${state.liquidityTier}`}
-            </span>
+          <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Liquidity Tier</span>
+              <span className="font-mono text-gray-300">
+                {state.isError ? 'Unavailable' : `Tier ${state.liquidityTier}`}
+              </span>
+            </div>
+            <div className="text-[10px] text-gray-500 mt-1">
+              Oracle-reported · simulated testnet state
+            </div>
           </div>
         </div>
       </div>
