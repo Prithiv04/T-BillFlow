@@ -15,10 +15,11 @@ export interface LiveSessionTx {
 }
 
 let sessionTxs: LiveSessionTx[] = [];
+let snapshot: LiveSessionTx[] = [];
 const subscribers = new Set<() => void>();
 
 export function getLiveSessionTxs(): LiveSessionTx[] {
-  return [...sessionTxs];
+  return snapshot;
 }
 
 export function addLiveSessionTx(tx: LiveSessionTx) {
@@ -26,12 +27,14 @@ export function addLiveSessionTx(tx: LiveSessionTx) {
   if (sessionTxs.some((t) => t.hash.toLowerCase() === tx.hash.toLowerCase())) {
     return;
   }
-  sessionTxs.unshift(tx);
+  sessionTxs = [tx, ...sessionTxs];
+  snapshot = sessionTxs;
   subscribers.forEach((cb) => cb());
 }
 
 export function clearLiveSessionTxs() {
   sessionTxs = [];
+  snapshot = [];
   subscribers.forEach((cb) => cb());
 }
 
