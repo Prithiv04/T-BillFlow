@@ -15,6 +15,10 @@ import { useCanExecute } from '@/hooks/useCanExecute';
 import { useLiveGate } from '@/hooks/useLiveGate';
 import { useTreasuryYield } from '@/hooks/useTreasuryYield';
 import { useMode } from '@/context/ModeContext';
+import { useVault } from '@/hooks/useVault';
+import { useLiveMandate } from '@/hooks/useLiveMandate';
+import { DEMO_MANDATE_ID } from '@/lib/constants';
+import { formatUnits } from 'viem';
 
 export default function OverviewPage() {
   const { isDemo } = useMode();
@@ -24,6 +28,14 @@ export default function OverviewPage() {
   const { canExecute: canExecuteLive } = useLiveGate();
   const canExecute = isDemo ? canExecuteDemo : canExecuteLive;
   const treasuryData = useTreasuryYield();
+  const {
+    isConnected,
+    shareBalance,
+    isBalanceLoading,
+    portfolioAssets,
+    isPortfolioLoading,
+  } = useVault();
+  const liveMandate = useLiveMandate(DEMO_MANDATE_ID);
 
   const refresh = useCallback(() => {
     setTick((t) => t + 1);
@@ -34,6 +46,51 @@ export default function OverviewPage() {
     resetDemo();
     refresh();
   };
+
+  // ── Derive Live vs Demo metrics strictly ─────────────────────────────────────
+  let portfolioValueDisplay = '$1,284,320.00';
+  let sharesDisplay = '1,281,000 USTB Shares';
+  let activeMandatesDisplay = '1 Active';
+  let activeMandatesSub = 'EIP-712 Scoped Delegation';
+
+  if (!isDemo) {
+    if (!isConnected) {
+      portfolioValueDisplay = 'Unavailable';
+      sharesDisplay = 'Connect wallet to view position';
+    } else if (isBalanceLoading || isPortfolioLoading) {
+      portfolioValueDisplay = '...';
+      sharesDisplay = 'Reading TBillVault...';
+    } else if (shareBalance !== undefined && portfolioAssets !== undefined) {
+      const valNum = Number(formatUnits(portfolioAssets, 18));
+      const sharesNum = Number(formatUnits(shareBalance, 18));
+      portfolioValueDisplay = `$${valNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      sharesDisplay = `${sharesNum.toLocaleString(undefined, { maximumFractionDigits: 4 })} USTB Shares`;
+    } else {
+      portfolioValueDisplay = 'Unavailable';
+      sharesDisplay = 'Unavailable';
+    }
+
+    if (liveMandate.isLoading) {
+      activeMandatesDisplay = '...';
+      activeMandatesSub = 'Querying registry...';
+    } else if (liveMandate.isError || !liveMandate.agent) {
+      activeMandatesDisplay = 'Unavailable';
+      activeMandatesSub = 'Registry unavailable';
+    } else {
+      const nowSec = BigInt(Math.floor(Date.now() / 1000));
+      const isActive =
+        !liveMandate.revoked &&
+        liveMandate.validUntil > nowSec &&
+        liveMandate.validFrom <= nowSec &&
+        liveMandate.used < liveMandate.maxCumulative;
+      activeMandatesDisplay = isActive ? '1 Active' : '0 Active';
+      activeMandatesSub = isActive
+        ? 'EIP-712 Active Mandate'
+        : liveMandate.revoked
+        ? 'Mandate Revoked'
+        : 'Mandate Inactive/Expired';
+    }
+  }
 
   return (
     <AppShell
@@ -47,8 +104,8 @@ export default function OverviewPage() {
             <span>Portfolio Value</span>
             <Wallet className="h-4 w-4 text-blue-400" />
           </div>
-          <div className="text-xl font-bold font-mono text-white">$1,284,320.00</div>
-          <div className="text-[10px] text-gray-500 font-mono mt-0.5">1,281,000 USTB Shares</div>
+          <div className="text-xl font-bold font-mono text-white">{portfolioValueDisplay}</div>
+          <div className="text-[10px] text-gray-500 font-mono mt-0.5">{sharesDisplay}</div>
         </div>
 
         <div className="panel p-4">
@@ -56,8 +113,8 @@ export default function OverviewPage() {
             <span>Active Mandates</span>
             <ShieldCheck className="h-4 w-4 text-emerald-400" />
           </div>
-          <div className="text-xl font-bold font-mono text-white">1 Active</div>
-          <div className="text-[10px] text-gray-500 font-mono mt-0.5">EIP-712 Scoped Delegation</div>
+          <div className="text-xl font-bold font-mono text-white">{activeMandatesDisplay}</div>
+          <div className="text-[10px] text-gray-500 font-mono mt-0.5">{activeMandatesSub}</div>
         </div>
 
         <div className="panel p-4">

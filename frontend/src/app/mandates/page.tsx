@@ -5,13 +5,20 @@ import { AppShell } from '@/components/layout/AppShell';
 import { Plus, KeyRound, Copy, Check } from 'lucide-react';
 import { mockMandate } from '@/mocks/data';
 import { ADDRESSES } from '@/config';
+import { useMode } from '@/context/ModeContext';
+import { useLiveMandate } from '@/hooks/useLiveMandate';
+import { DEMO_MANDATE_ID } from '@/lib/constants';
+import { formatUnits } from 'viem';
 
 export default function MandatesPage() {
+  const { isDemo } = useMode();
   const [selectedMandate, setSelectedMandate] = useState(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const mandates = [
+  const liveMandate = useLiveMandate(DEMO_MANDATE_ID);
+
+  const demoMandates = [
     {
       id: '0x0000000000000000000000000000000000000000000000000000000000000001',
       agent: mockMandate.agent,
@@ -42,8 +49,65 @@ export default function MandatesPage() {
     },
   ];
 
-  const m = mandates[selectedMandate];
-  const percentUsed = (m.used / m.maxCumulative) * 100;
+  const nowSec = BigInt(Math.floor(Date.now() / 1000));
+  const isLiveActive =
+    !liveMandate.revoked &&
+    liveMandate.validUntil > nowSec &&
+    liveMandate.validFrom <= nowSec &&
+    liveMandate.used < liveMandate.maxCumulative;
+
+  const liveStatus = liveMandate.isError || !liveMandate.agent
+    ? 'UNAVAILABLE'
+    : liveMandate.revoked
+    ? 'REVOKED'
+    : liveMandate.validUntil < nowSec
+    ? 'EXPIRED'
+    : isLiveActive
+    ? 'ACTIVE'
+    : 'INACTIVE';
+
+  const liveAction =
+    liveMandate.allowedActionsMask === 1n
+      ? 'DEPOSIT'
+      : liveMandate.allowedActionsMask === 2n
+      ? 'REDEEM'
+      : liveMandate.allowedActionsMask === 3n
+      ? 'DEPOSIT | REDEEM'
+      : liveMandate.isError
+      ? 'Unavailable'
+      : `0x${liveMandate.allowedActionsMask.toString(16)}`;
+
+  const liveMandates = [
+    {
+      id: DEMO_MANDATE_ID,
+      agent: liveMandate.isLoading
+        ? '...'
+        : liveMandate.isError || !liveMandate.agent
+        ? 'Unavailable'
+        : liveMandate.agent,
+      asset: 'tBUSD (MockUSDC)',
+      actions: liveMandate.isLoading ? '...' : liveAction,
+      maxTx: liveMandate.isLoading ? 0 : Number(formatUnits(liveMandate.maxTx, 6)),
+      maxCumulative: liveMandate.isLoading ? 0 : Number(formatUnits(liveMandate.maxCumulative, 6)),
+      used: liveMandate.isLoading ? 0 : Number(formatUnits(liveMandate.used, 6)),
+      validFrom:
+        liveMandate.validFrom > 0n
+          ? new Date(Number(liveMandate.validFrom) * 1000).toISOString().split('T')[0]
+          : 'Unavailable',
+      validUntil:
+        liveMandate.validUntil > 0n
+          ? new Date(Number(liveMandate.validUntil) * 1000).toISOString().split('T')[0]
+          : 'Unavailable',
+      status: liveMandate.isLoading ? 'LOADING' : liveStatus,
+      nonce: Number(liveMandate.nonce),
+      target: liveMandate.allowedTarget || ADDRESSES.vault,
+    },
+  ];
+
+  const mandates = isDemo ? demoMandates : liveMandates;
+  const safeIdx = Math.min(selectedMandate, mandates.length - 1);
+  const m = mandates[safeIdx] || mandates[0];
+  const percentUsed = m.maxCumulative > 0 ? (m.used / m.maxCumulative) * 100 : 0;
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);

@@ -7,17 +7,38 @@ import { YIELD_THRESHOLD } from '@/config';
 import { mockYield, mockRwaState, mockMandate } from '@/mocks/data';
 import { useMode } from '@/context/ModeContext';
 import { useLiveGate } from '@/hooks/useLiveGate';
+import { useTreasuryYield } from '@/hooks/useTreasuryYield';
+import { useLiveRwaState } from '@/hooks/useLiveRwaState';
+import { useLiveMandate } from '@/hooks/useLiveMandate';
+import { DEMO_MANDATE_ID } from '@/lib/constants';
+import { formatUnits } from 'viem';
 
 export default function AgentPage() {
   const { isDemo } = useMode();
   const { canExecute: canExecuteLive, gateReason } = useLiveGate();
+  const treasuryData = useTreasuryYield();
+  const liveRwa = useLiveRwaState();
+  const liveMandate = useLiveMandate(DEMO_MANDATE_ID);
+
+  // Demo: use mock data. Live: use on-chain data.
   const currentYield = mockYield;
-  const isYieldOk = currentYield >= YIELD_THRESHOLD;
-  const isRwaOk = !mockRwaState.isStale && mockRwaState.redemptionOpen;
-  const isMandateOk = !mockMandate.revoked;
+  const isYieldOk = isDemo
+    ? currentYield >= YIELD_THRESHOLD
+    : treasuryData.yield !== null && treasuryData.yield >= YIELD_THRESHOLD;
+  const isRwaOk = isDemo
+    ? !mockRwaState.isStale && mockRwaState.redemptionOpen
+    : !liveRwa.isStale && liveRwa.redemptionOpen;
+  const isMandateOk = isDemo ? !mockMandate.revoked : !liveMandate.revoked && !!liveMandate.agent;
   const isGateOk = isDemo ? (isYieldOk && isRwaOk && isMandateOk) : canExecuteLive;
 
-  const logs = [
+  const nowSec = BigInt(Math.floor(Date.now() / 1000));
+  const isLiveMandateValid =
+    !liveMandate.revoked &&
+    liveMandate.validUntil > nowSec &&
+    liveMandate.validFrom <= nowSec &&
+    liveMandate.used < liveMandate.maxCumulative;
+
+  const demoLogs = [
     {
       time: '19:42:13 UTC',
       title: 'Opportunity detected',
@@ -54,12 +75,96 @@ export default function AgentPage() {
         `canExecute() evaluation: ${isGateOk ? 'ALLOWED' : 'BLOCKED'}`,
         isGateOk
           ? 'Calldata forwarded to TBillVault: SUCCESS'
-          : isDemo
-          ? 'Gate Reverted: Unauthorized or Ineligible'
+          : 'Gate Reverted: Unauthorized or Ineligible',
+      ],
+    },
+  ];
+
+  const liveLogs = [
+    {
+      time: 'Live Stream',
+      title: 'Treasury Opportunity Pipeline',
+      lines: [
+        `3M U.S. Treasury Benchmark: ${treasuryData.formattedYield}`,
+        `Configured Threshold: ${YIELD_THRESHOLD.toFixed(1)}% APY`,
+        `Yield Assessment: ${
+          treasuryData.yield !== null
+            ? treasuryData.yield >= YIELD_THRESHOLD
+              ? 'PASS (Exceeds threshold)'
+              : 'INFO (Below threshold)'
+            : 'Unavailable'
+        }`,
+      ],
+    },
+    {
+      time: 'Live Stream',
+      title: 'RWA State Oracle Verification',
+      lines: [
+        `Target Asset: tBUSD (MockUSDC)`,
+        `NAV Freshness: ${
+          liveRwa.isError
+            ? 'Unavailable'
+            : !liveRwa.isStale
+            ? 'PASS (Fresh)'
+            : `FAIL (Stale — ${liveRwa.navAgeSeconds}s old)`
+        }`,
+        `Redemption Window: ${
+          liveRwa.isError
+            ? 'Unavailable'
+            : liveRwa.redemptionOpen
+            ? 'PASS (Open)'
+            : 'FAIL (Closed)'
+        }`,
+        `Liquidity Tier: ${
+          liveRwa.isError
+            ? 'Unavailable'
+            : `Tier ${liveRwa.liquidityTier} (Required >= 1)`
+        }`,
+      ],
+    },
+    {
+      time: 'Live Stream',
+      title: 'Agent Mandate Authorization',
+      lines: [
+        `Designated Agent: ${
+          liveMandate.isError || !liveMandate.agent ? 'Unavailable' : liveMandate.agent
+        }`,
+        `Action Permission: ${
+          liveMandate.isError
+            ? 'Unavailable'
+            : liveMandate.allowedActionsMask === 3n
+            ? 'DEPOSIT | REDEEM'
+            : 'DEPOSIT'
+        }`,
+        `Cumulative Budget: ${
+          liveMandate.isError
+            ? 'Unavailable'
+            : `Used $${Number(formatUnits(liveMandate.used, 6)).toLocaleString()} / $${Number(
+                formatUnits(liveMandate.maxCumulative, 6)
+              ).toLocaleString()}`
+        }`,
+        `Mandate State: ${
+          liveMandate.isError || !liveMandate.agent
+            ? 'Unavailable'
+            : isLiveMandateValid
+            ? 'PASS (Active & Valid)'
+            : 'FAIL (Revoked/Expired)'
+        }`,
+      ],
+    },
+    {
+      time: 'Live Stream',
+      title: 'AgentExecutionGate Simulation',
+      lines: [
+        `canExecuteAs() on-chain: ${canExecuteLive ? 'ALLOWED' : 'BLOCKED'}`,
+        canExecuteLive
+          ? 'Calldata forwarded to TBillVault: PERMITTED'
           : `Gate Reverted: ${gateReason}`,
       ],
     },
   ];
+
+  const logs = isDemo ? demoLogs : liveLogs;
 
   return (
     <AppShell
@@ -93,7 +198,9 @@ export default function AgentPage() {
               </div>
               <div className="p-2 rounded bg-[#0E1013] border border-[#1E2229]">
                 <span className="text-gray-500 block text-[10px] uppercase">Current Yield</span>
-                <span className="text-emerald-400 font-bold">{currentYield.toFixed(1)}% APY</span>
+                <span className="text-emerald-400 font-bold">
+                  {isDemo ? `${mockYield.toFixed(1)}% APY` : treasuryData.formattedYield}
+                </span>
               </div>
             </div>
 
@@ -103,12 +210,12 @@ export default function AgentPage() {
                 <span className="text-white">60s</span>
               </div>
               <div className="flex justify-between text-gray-400">
-                <span>Last Polled:</span>
-                <span className="text-gray-300">12s ago</span>
+                <span>RWA Oracle:</span>
+                <span className="text-gray-300">15s refetch</span>
               </div>
               <div className="flex justify-between text-gray-400">
-                <span>Next Evaluation:</span>
-                <span className="text-gray-300">48s</span>
+                <span>Gate Simulation:</span>
+                <span className="text-gray-300">15s refetch</span>
               </div>
             </div>
           </div>

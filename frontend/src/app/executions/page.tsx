@@ -21,7 +21,7 @@ export default function ExecutionsPage() {
       result: 'SUCCESS',
       reason: 'All checks passed',
       block: 14829104,
-      selector: '0xb6b55f25 (deposit(uint256,address))',
+      selector: '0x6e553f65 (deposit(uint256,address))',
     })),
     {
       hash: '0x19a2...98c1',
@@ -43,7 +43,7 @@ export default function ExecutionsPage() {
       result: 'BLOCKED',
       reason: 'TX_LIMIT_EXCEEDED (> $1,000,000)',
       block: 14828600,
-      selector: '0xb6b55f25 (deposit(uint256,address))',
+      selector: '0x6e553f65 (deposit(uint256,address))',
     },
   ];
 

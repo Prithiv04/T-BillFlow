@@ -26,7 +26,7 @@ function DepositContent() {
 
   const [amount, setAmount] = useState("");
   const [status, setStatus] = useState<"idle" | "pending" | "success">("idle");
-  const [txHash, setTxHash] = useState("0xabc123def456abc123def456abc123def456abc123def456abc123def456abc1");
+  const [txHash, setTxHash] = useState("");
 
   const shares = amount ? (parseFloat(amount) / SHARE_RATE).toFixed(6) : "0.000000";
   const activeRate = isDemo ? 6.5 : treasuryData.yield;

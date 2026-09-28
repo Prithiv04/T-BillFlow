@@ -18,7 +18,12 @@ export function useVault() {
   });
 
   // 2. Read User's Share Balance — polls every 10s
-  const { data: shareBalance, isLoading: isBalanceLoading, refetch: refetchBalance } = useReadContract({
+  const {
+    data: shareBalance,
+    isLoading: isBalanceLoading,
+    isError: isBalanceError,
+    refetch: refetchBalance,
+  } = useReadContract({
     address: TBILL_VAULT_ADDRESS,
     abi: tbillVaultAbi,
     functionName: 'balanceOf',
@@ -29,9 +34,30 @@ export function useVault() {
     },
   });
 
-// Removed unused totalSupply read block
+  // 3. Read User's Portfolio Value via ERC-4626 convertToAssets — polls every 10s
+  const {
+    data: portfolioAssets,
+    isLoading: isPortfolioLoading,
+    isError: isPortfolioError,
+    refetch: refetchPortfolio,
+  } = useReadContract({
+    address: TBILL_VAULT_ADDRESS,
+    abi: tbillVaultAbi,
+    functionName: 'convertToAssets',
+    args: shareBalance !== undefined ? [shareBalance] : undefined,
+    query: {
+      enabled: !!address && shareBalance !== undefined,
+      refetchInterval: 10_000,
+    },
+  });
+
   // 4. Read User's tBUSD Balance
-  const { data: tbusdBalance, refetch: refetchTbusdBalance } = useReadContract({
+  const {
+    data: tbusdBalance,
+    isLoading: isTbusdLoading,
+    isError: isTbusdError,
+    refetch: refetchTbusdBalance,
+  } = useReadContract({
     address: TBUSD_ADDRESS,
     abi: erc20Abi,
     functionName: 'balanceOf',
@@ -83,11 +109,19 @@ export function useVault() {
   };
 
   return {
+    address,
+    isConnected: !!address,
     tvl,
     isTvlLoading,
     shareBalance,
     isBalanceLoading,
+    isBalanceError,
+    portfolioAssets,
+    isPortfolioLoading,
+    isPortfolioError,
     tbusdBalance,
+    isTbusdLoading,
+    isTbusdError,
     isDepositPending,
     isApprovePending,
     isRedeemPending,
@@ -97,6 +131,7 @@ export function useVault() {
     refetchAll: () => {
       refetchTvl();
       refetchBalance();
+      refetchPortfolio();
       refetchTbusdBalance();
     }
   };

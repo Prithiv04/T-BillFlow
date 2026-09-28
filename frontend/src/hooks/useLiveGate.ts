@@ -21,6 +21,7 @@ import {
   DEPOSIT_SELECTOR,
   EXPLORER_URL,
 } from '@/lib/constants';
+import { addLiveSessionTx } from '@/lib/liveSessionHistory';
 
 // ─── Transaction status lifecycle ────────────────────────────────────────────
 export type TxStatus =
@@ -165,12 +166,22 @@ export function useLiveGate(
   useEffect(() => {
     if (txStatus === 'pending' && isReceiptSuccess) {
       setTxStatus('confirmed');
+      if (txHash) {
+        addLiveSessionTx({
+          hash: txHash,
+          action: 'DEPOSIT',
+          asset: 'USTB',
+          amount: 250000,
+          status: 'Confirmed',
+          time: Date.now(),
+        });
+      }
     }
     if (txStatus === 'pending' && isReceiptError) {
       setTxStatus('failed');
       setTxError('Transaction reverted on-chain');
     }
-  }, [txStatus, isReceiptSuccess, isReceiptError]);
+  }, [txStatus, isReceiptSuccess, isReceiptError, txHash]);
 
   // ── 5. executeDeposit ────────────────────────────────────────────────────
   const executeDeposit = useCallback(async (depositAmount: bigint) => {

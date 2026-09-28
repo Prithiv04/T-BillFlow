@@ -6,9 +6,12 @@ import { Database, CheckCircle2, AlertTriangle, RefreshCw, Sliders, ShieldCheck 
 import { mockRwaState, INITIAL_MOCK_TIME } from '@/mocks/data';
 import { formatUtcTime } from '@/lib/utils';
 import { useMode } from '@/context/ModeContext';
+import { useLiveRwaState } from '@/hooks/useLiveRwaState';
+import { RWA_ORACLE_ADDRESS, EXPLORER_URL } from '@/lib/constants';
 
 export default function RwaAssetsPage() {
   const { isDemo } = useMode();
+  const liveRwa = useLiveRwaState();
   const [, setTick] = useState(0);
 
   const refresh = () => setTick((t) => t + 1);
@@ -33,7 +36,51 @@ export default function RwaAssetsPage() {
     refresh();
   };
 
-  const isEligible = !mockRwaState.isStale && mockRwaState.redemptionOpen && mockRwaState.liquidityTier >= 1;
+  const isDemoEligible = !mockRwaState.isStale && mockRwaState.redemptionOpen && mockRwaState.liquidityTier >= 1;
+  const isLiveEligible = !liveRwa.isStale && liveRwa.redemptionOpen && liveRwa.liquidityTier >= 1;
+
+  // ── Strict Display Derivation ───────────────────────────────────────────────
+  const navPriceDisplay = isDemo
+    ? `$${mockRwaState.nav.toFixed(2)}`
+    : liveRwa.isError
+    ? 'Unavailable'
+    : liveRwa.isLoading
+    ? '...'
+    : `$${(Number(liveRwa.nav) / 1e18).toFixed(4)}`;
+
+  const freshnessDisplay = isDemo
+    ? !mockRwaState.isStale ? '< 60s' : '> 300s (Stale)'
+    : liveRwa.isError
+    ? 'Unavailable'
+    : liveRwa.isLoading
+    ? '...'
+    : `${liveRwa.navAgeSeconds}s ago (${liveRwa.isStale ? 'Stale' : 'Fresh'})`;
+
+  const isFresh = isDemo ? !mockRwaState.isStale : !liveRwa.isStale;
+
+  const redemptionDisplay = isDemo
+    ? mockRwaState.redemptionOpen ? 'OPEN' : 'CLOSED'
+    : liveRwa.isError
+    ? 'Unavailable'
+    : liveRwa.isLoading
+    ? '...'
+    : liveRwa.redemptionOpen ? 'OPEN' : 'CLOSED';
+
+  const isRedemptionOpen = isDemo ? mockRwaState.redemptionOpen : liveRwa.redemptionOpen;
+
+  const liquidityDisplay = isDemo
+    ? `Tier ${mockRwaState.liquidityTier}`
+    : liveRwa.isError
+    ? 'Unavailable'
+    : liveRwa.isLoading
+    ? '...'
+    : `Tier ${liveRwa.liquidityTier}`;
+
+  const statusDisplay = isDemo
+    ? isDemoEligible ? 'ELIGIBLE' : 'BLOCKED'
+    : liveRwa.isError
+    ? 'UNAVAILABLE'
+    : isLiveEligible ? 'ELIGIBLE' : 'BLOCKED';
 
   return (
     <AppShell
@@ -51,7 +98,7 @@ export default function RwaAssetsPage() {
               </h2>
             </div>
             <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#181B20] text-gray-400 border border-[#2A303A]">
-              RWAStateOracle.sol
+              RWAStateOracle.sol {isDemo ? '(Demo)' : '(Live)'}
             </span>
           </div>
 
@@ -72,40 +119,44 @@ export default function RwaAssetsPage() {
                   <td className="font-semibold text-white">
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                      <span>USTB</span>
+                      <span>{isDemo ? 'USTB' : 'tBUSD (MockUSDC)'}</span>
                     </div>
                   </td>
-                  <td className="font-mono text-white">${mockRwaState.nav.toFixed(2)}</td>
+                  <td className="font-mono text-white">{navPriceDisplay}</td>
                   <td className="font-mono text-gray-300">
                     <span
                       className={`inline-flex items-center gap-1 font-mono text-[10px] px-1.5 py-0.5 rounded ${
-                        !mockRwaState.isStale
+                        isFresh
                           ? 'bg-emerald-500/10 text-emerald-400'
                           : 'bg-rose-500/10 text-rose-400'
                       }`}
                     >
-                      {!mockRwaState.isStale ? '< 60s' : '> 300s (Stale)'}
+                      {freshnessDisplay}
                     </span>
                   </td>
                   <td>
                     <span
                       className={`font-mono text-[10px] px-2 py-0.5 rounded ${
-                        mockRwaState.redemptionOpen
+                        isRedemptionOpen
                           ? 'bg-emerald-500/10 text-emerald-400'
                           : 'bg-rose-500/10 text-rose-400'
                       }`}
                     >
-                      {mockRwaState.redemptionOpen ? 'OPEN' : 'CLOSED'}
+                      {redemptionDisplay}
                     </span>
                   </td>
-                  <td className="font-mono text-gray-300">Tier {mockRwaState.liquidityTier}</td>
+                  <td className="font-mono text-gray-300">{liquidityDisplay}</td>
                   <td>
                     <span
                       className={`badge font-mono text-[10px] ${
-                        isEligible ? 'badge-green' : 'badge-red'
+                        statusDisplay === 'ELIGIBLE'
+                          ? 'badge-green'
+                          : statusDisplay === 'BLOCKED'
+                          ? 'badge-red'
+                          : 'badge-neutral'
                       }`}
                     >
-                      {isEligible ? 'ELIGIBLE' : 'BLOCKED'}
+                      {statusDisplay}
                     </span>
                   </td>
                 </tr>
@@ -116,7 +167,7 @@ export default function RwaAssetsPage() {
           <div className="p-3.5 rounded-lg bg-[#0E1013] border border-[#1E2229] mt-4 text-xs text-gray-400 space-y-1">
             <div className="font-medium text-gray-300">On-Chain Eligibility Rules:</div>
             <div className="text-[11px] font-mono text-gray-500">
-              • Deposits require: Asset Supported + NAV Fresh (&lt;300s) + Liquidity Sufficient (&gt;=Tier 1)<br />
+              • Deposits require: Asset Supported + NAV Fresh + Liquidity Sufficient (&gt;=Tier 1)<br />
               • Redemptions require: Asset Supported + NAV Fresh + Redemption Window Open
             </div>
           </div>
@@ -128,61 +179,111 @@ export default function RwaAssetsPage() {
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#1E2229]">
               <div className="flex items-center gap-1.5">
                 <Sliders className="h-4 w-4 text-blue-400" />
-                <h3 className="text-sm font-semibold text-white tracking-tight">Oracle Simulation</h3>
+                <h3 className="text-sm font-semibold text-white tracking-tight">
+                  {isDemo ? 'Oracle Simulation' : 'Live Oracle Diagnostics'}
+                </h3>
               </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#181B20] text-amber-400 border border-[#2A303A]">
-                Demo Harness
+              <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                isDemo
+                  ? 'bg-[#181B20] text-amber-400 border-[#2A303A]'
+                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+              }`}>
+                {isDemo ? 'Demo Harness' : 'Arbitrum Sepolia'}
               </span>
             </div>
 
-            <p className="text-xs text-gray-400 mb-4">
-              Directly manipulate simulated on-chain oracle conditions to evaluate how the Execution Gate reacts.
-            </p>
+            {isDemo ? (
+              <>
+                <p className="text-xs text-gray-400 mb-4">
+                  Directly manipulate simulated on-chain oracle conditions to evaluate how the Execution Gate reacts.
+                </p>
 
-            <div className="space-y-2.5">
-              <button
-                onClick={toggleStale}
-                className="w-full p-2.5 rounded bg-[#0E1013] hover:bg-[#14161A] border border-[#1E2229] text-xs font-mono flex items-center justify-between text-gray-200 transition-colors"
-              >
-                <span>NAV Freshness:</span>
-                <span
-                  className={`px-2 py-0.5 rounded font-bold ${
-                    !mockRwaState.isStale ? 'text-emerald-400' : 'text-rose-400'
-                  }`}
-                >
-                  {!mockRwaState.isStale ? 'Toggle Stale' : 'Refresh NAV'}
-                </span>
-              </button>
+                <div className="space-y-2.5">
+                  <button
+                    onClick={toggleStale}
+                    className="w-full p-2.5 rounded bg-[#0E1013] hover:bg-[#14161A] border border-[#1E2229] text-xs font-mono flex items-center justify-between text-gray-200 transition-colors"
+                  >
+                    <span>NAV Freshness:</span>
+                    <span
+                      className={`px-2 py-0.5 rounded font-bold ${
+                        !mockRwaState.isStale ? 'text-emerald-400' : 'text-rose-400'
+                      }`}
+                    >
+                      {!mockRwaState.isStale ? 'FRESH (<60s)' : 'STALE (>300s)'}
+                    </span>
+                  </button>
 
-              <button
-                onClick={toggleRedemption}
-                className="w-full p-2.5 rounded bg-[#0E1013] hover:bg-[#14161A] border border-[#1E2229] text-xs font-mono flex items-center justify-between text-gray-200 transition-colors"
-              >
-                <span>Redemption Window:</span>
-                <span
-                  className={`px-2 py-0.5 rounded font-bold ${
-                    mockRwaState.redemptionOpen ? 'text-emerald-400' : 'text-rose-400'
-                  }`}
-                >
-                  {mockRwaState.redemptionOpen ? 'Close Window' : 'Open Window'}
-                </span>
-              </button>
+                  <button
+                    onClick={toggleRedemption}
+                    className="w-full p-2.5 rounded bg-[#0E1013] hover:bg-[#14161A] border border-[#1E2229] text-xs font-mono flex items-center justify-between text-gray-200 transition-colors"
+                  >
+                    <span>Redemption Window:</span>
+                    <span
+                      className={`px-2 py-0.5 rounded font-bold ${
+                        mockRwaState.redemptionOpen ? 'text-emerald-400' : 'text-rose-400'
+                      }`}
+                    >
+                      {mockRwaState.redemptionOpen ? 'OPEN' : 'CLOSED'}
+                    </span>
+                  </button>
 
-              <button
-                onClick={cycleTier}
-                className="w-full p-2.5 rounded bg-[#0E1013] hover:bg-[#14161A] border border-[#1E2229] text-xs font-mono flex items-center justify-between text-gray-200 transition-colors"
-              >
-                <span>Cycle Liquidity Tier:</span>
-                <span className="font-bold text-blue-400">
-                  Tier {mockRwaState.liquidityTier} →
-                </span>
-              </button>
-            </div>
+                  <button
+                    onClick={cycleTier}
+                    className="w-full p-2.5 rounded bg-[#0E1013] hover:bg-[#14161A] border border-[#1E2229] text-xs font-mono flex items-center justify-between text-gray-200 transition-colors"
+                  >
+                    <span>Liquidity Tier:</span>
+                    <span className="text-blue-400 font-bold">
+                      Tier {mockRwaState.liquidityTier} (Click to cycle)
+                    </span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-3 text-xs font-mono">
+                <p className="text-gray-400 text-xs">
+                  Connected to real on-chain Oracle contract. Interactive simulation controls are disabled in LIVE mode.
+                </p>
+
+                <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229] space-y-1">
+                  <span className="text-gray-500 block text-[10px] uppercase">Contract Address</span>
+                  <a
+                    href={`${EXPLORER_URL}/address/${RWA_ORACLE_ADDRESS}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:underline text-[11px] break-all"
+                  >
+                    {RWA_ORACLE_ADDRESS}
+                  </a>
+                </div>
+
+                <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229] space-y-1">
+                  <span className="text-gray-500 block text-[10px] uppercase">Max NAV Age Threshold</span>
+                  <span className="text-white text-[11px]">
+                    {liveRwa.isError ? 'Unavailable' : `${liveRwa.maxNavAge.toString()} seconds (${Number(liveRwa.maxNavAge) / 3600} hours)`}
+                  </span>
+                </div>
+
+                <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229] space-y-1">
+                  <span className="text-gray-500 block text-[10px] uppercase">Last On-Chain Update</span>
+                  <span className="text-gray-300 text-[11px]">
+                    {liveRwa.isError || liveRwa.navUpdatedAt === 0n
+                      ? 'Unavailable'
+                      : new Date(Number(liveRwa.navUpdatedAt) * 1000).toUTCString()}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="pt-3 border-t border-[#1E2229] mt-3 text-[11px] font-mono text-gray-500 flex items-center justify-between">
             <span>Last NAV Timestamp:</span>
-            <span className="text-gray-400">{formatUtcTime(mockRwaState.navUpdatedAt)}</span>
+            <span className="text-gray-400">
+              {isDemo
+                ? formatUtcTime(mockRwaState.navUpdatedAt)
+                : liveRwa.isError || liveRwa.navUpdatedAt === 0n
+                ? 'Unavailable'
+                : new Date(Number(liveRwa.navUpdatedAt) * 1000).toUTCString()}
+            </span>
           </div>
         </div>
       </div>
