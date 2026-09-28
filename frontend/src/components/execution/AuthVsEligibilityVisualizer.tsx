@@ -200,7 +200,7 @@ export function AuthVsEligibilityVisualizer() {
             <div className="text-[11px] opacity-80 mt-0.5">
               {canExecute
                 ? 'All mandate parameters and real-world asset criteria satisfied. Calldata forwarded.'
-                : 'Blocked by on-chain gate. The AI proposed an action, but authority was refused.'}
+                : 'Blocked by on-chain gate. The AI proposed an action, but execution was refused because the RWA was ineligible.'}
             </div>
           </div>
         </div>

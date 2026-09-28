@@ -116,12 +116,12 @@ function LiveRwaStateCard() {
     <div className="panel p-5 flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#1E2229]">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Database className="h-4 w-4 text-amber-400" />
-            <h2 className="text-sm font-semibold text-white tracking-tight">RWA State Oracle · Testnet</h2>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181B20] text-gray-400 border border-[#2A303A]">
-              Simulated RWA state · on-chain
-            </span>
+          <div className="flex items-center gap-2">
+            <Database className="h-4 w-4 text-amber-400 shrink-0" />
+            <div>
+              <h2 className="text-sm font-semibold text-white tracking-tight">RWA State Oracle · Testnet</h2>
+              <div className="text-[10px] text-gray-400 font-mono mt-0.5">Simulated RWA state · on-chain</div>
+            </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {state.isLoading && <Loader2 className="h-3 w-3 animate-spin text-gray-400" />}

@@ -278,10 +278,10 @@ function LiveExecutionPanel({ onExecuted }: MainExecutionPanelProps) {
           </div>
         )}
 
-        {/* Gate simulation result */}
+        {/* Gate evaluation result */}
         <div className="mb-4">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
-            Gate Simulation — canExecuteAs()
+            Gate Evaluation — canExecuteAs()
           </div>
           <div className={`p-3 rounded-lg border text-xs font-mono flex items-center gap-2 ${
             isSimulating
