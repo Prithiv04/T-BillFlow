@@ -27,6 +27,7 @@ CURRENT_YIELD = float(os.getenv("CURRENT_YIELD", "6.5"))   # percent
 # Mock / dry‑run mode flag
 MOCK_MODE = os.getenv("AGENT_MOCK_MODE", "false").lower() == "true"
 
-# Validate required secrets are present (raise early if missing)
-if not ARBITRUM_SEPOLIA_RPC_URL or not PRIVATE_KEY:
-    raise EnvironmentError("Missing blockchain credentials in .env")
+# Validate required secrets are present — only required in live (non‑mock) mode.
+if not MOCK_MODE:
+    if not ARBITRUM_SEPOLIA_RPC_URL or not PRIVATE_KEY:
+        raise EnvironmentError("Missing blockchain credentials in .env (required in live mode)")

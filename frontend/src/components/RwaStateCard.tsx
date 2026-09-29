@@ -79,7 +79,13 @@ function DemoRwaStateCard() {
 
           <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
             <span className="text-gray-400">Liquidity Tier</span>
-            <span className="font-mono text-gray-300">Tier {mockRwaState.liquidityTier} (Sufficient)</span>
+            <span className={`font-mono text-[11px] px-2 py-0.5 rounded ${
+              mockRwaState.liquidityTier >= 1
+                ? 'text-gray-300'
+                : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+            }`}>
+              Tier {mockRwaState.liquidityTier} ({mockRwaState.liquidityTier >= 1 ? 'Sufficient' : 'Insufficient'})
+            </span>
           </div>
         </div>
       </div>

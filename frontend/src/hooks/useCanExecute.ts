@@ -1,5 +1,4 @@
-import { mockYield, mockRwaState, mockMandate, mockExecutionRequest } from '@/mocks/data';
-import { YIELD_THRESHOLD } from '@/config';
+import { mockRwaState, mockMandate, mockExecutionRequest } from '@/mocks/data';
 
 export interface ChecklistItem {
   key: string;
@@ -8,46 +7,58 @@ export interface ChecklistItem {
   detail?: string;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// useCanExecute — mirrors exactly what AgentExecutionGate.sol enforces:
+//   AUTHORIZATION (mandate checks) and ELIGIBILITY (RWA oracle checks).
+//
+// NOTE: Yield threshold is an OFF-CHAIN agent decision (the agent decides
+// whether to propose an action). It is NOT enforced by the on-chain gate and
+// must NOT appear in the gate checklist. The AI is autonomous; the authority
+// is not.
+// ─────────────────────────────────────────────────────────────────────────────
 export function useCanExecute() {
-  const navFresh = !mockRwaState.isStale;
-  const mandateValid = !mockMandate.revoked;
-
-  const txLimitValid = mockExecutionRequest.amount <= mockMandate.maxTx;
+  // ── Authorization checks (AgentMandateRegistry.validateMandate) ──────────
+  const mandateValid  = !mockMandate.revoked;
+  const txLimitValid  = mockExecutionRequest.amount <= mockMandate.maxTx;
   const cumulativeValid =
     mockMandate.used + mockExecutionRequest.amount <= mockMandate.maxCumulative;
+  const agentAuthorized  = Boolean(mockMandate.agent);
+  const actionAllowed    = mockExecutionRequest.action === mockMandate.allowedAction;
+  const targetAllowed    = Boolean(mockExecutionRequest.target);
+  const selectorAllowed  = Boolean(mockExecutionRequest.selector);
 
-  const agentAuthorized = Boolean(mockMandate.agent);
-  const actionAllowed = mockExecutionRequest.action === mockMandate.allowedAction;
-  const targetAllowed = Boolean(mockExecutionRequest.target);
-  const selectorAllowed = Boolean(mockExecutionRequest.selector);
-  const redemptionAllowed = mockRwaState.redemptionOpen;
+  // ── Eligibility checks (RWAStateOracle.isEligible) ───────────────────────
+  const navFresh            = !mockRwaState.isStale;
+  const redemptionAllowed   = mockRwaState.redemptionOpen;
   const liquidityTierAllowed = mockRwaState.liquidityTier >= 1;
-  const yieldSufficient = mockYield >= YIELD_THRESHOLD;
 
   const reasons: string[] = [];
 
-  if (!yieldSufficient) reasons.push('Yield below threshold');
-  if (!mandateValid) reasons.push('Mandate revoked');
-  if (!txLimitValid) reasons.push(`Transaction limit exceeded (${mockExecutionRequest.amount.toLocaleString()} > ${mockMandate.maxTx.toLocaleString()})`);
-  if (!cumulativeValid) reasons.push(`Cumulative limit exceeded (${(mockMandate.used + mockExecutionRequest.amount).toLocaleString()} > ${mockMandate.maxCumulative.toLocaleString()})`);
-  if (!navFresh) reasons.push('NAV stale');
-  if (!redemptionAllowed) reasons.push('Redemption closed by oracle');
-  if (!liquidityTierAllowed) reasons.push('Insufficient liquidity tier');
+  // Authorization failures
+  if (!mandateValid)    reasons.push('Mandate revoked');
+  if (!txLimitValid)    reasons.push(`TxLimitExceeded (${mockExecutionRequest.amount.toLocaleString()} > ${mockMandate.maxTx.toLocaleString()})`);
+  if (!cumulativeValid) reasons.push(`CumulativeLimitExceeded (${(mockMandate.used + mockExecutionRequest.amount).toLocaleString()} > ${mockMandate.maxCumulative.toLocaleString()})`);
+
+  // Eligibility failures
+  if (!navFresh)             reasons.push('NavStale — Authorization ≠ Eligibility');
+  if (!redemptionAllowed)    reasons.push('RedemptionClosed');
+  if (!liquidityTierAllowed) reasons.push('LiquidityTooLow');
 
   const checklist: ChecklistItem[] = [
-    { key: 'mandate', label: 'Mandate', passed: mandateValid },
-    { key: 'agent', label: 'Agent', passed: agentAuthorized },
-    { key: 'action', label: 'Action', passed: actionAllowed },
-    { key: 'target', label: 'Target', passed: targetAllowed },
-    { key: 'selector', label: 'Selector', passed: selectorAllowed },
-    { key: 'txLimit', label: 'Tx limit', passed: txLimitValid },
-    { key: 'cumulative', label: 'Cumulative', passed: cumulativeValid },
-    { key: 'navFreshness', label: 'NAV freshness', passed: navFresh },
-    { key: 'redemption', label: 'Redemption', passed: redemptionAllowed },
-    { key: 'liquidity', label: 'Liquidity', passed: liquidityTierAllowed },
+    { key: 'mandate',      label: 'Mandate registered & active', passed: mandateValid },
+    { key: 'agent',        label: 'Designated agent identity',   passed: agentAuthorized },
+    { key: 'action',       label: 'Action permission',           passed: actionAllowed },
+    { key: 'target',       label: 'Target whitelist',            passed: targetAllowed },
+    { key: 'selector',     label: 'Selector allowlist',          passed: selectorAllowed },
+    { key: 'txLimit',      label: 'Per-tx limit',                passed: txLimitValid },
+    { key: 'cumulative',   label: 'Cumulative budget',           passed: cumulativeValid },
+    { key: 'navFreshness', label: 'NAV freshness',               passed: navFresh },
+    { key: 'redemption',   label: 'Redemption window',           passed: redemptionAllowed },
+    { key: 'liquidity',    label: 'Liquidity tier ≥ 1',          passed: liquidityTierAllowed },
   ];
 
   const canExecute = reasons.length === 0;
 
   return { canExecute, reasons, checklist };
 }
+

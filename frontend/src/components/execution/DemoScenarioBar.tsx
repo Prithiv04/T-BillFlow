@@ -1,17 +1,18 @@
 "use client";
 
 import React from 'react';
-import { RefreshCw, Play, ShieldAlert, AlertTriangle } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import {
   loadSuccessScenario,
   loadBlockedScenarioMaxTx,
   loadBlockedScenarioCumulative,
   loadBlockedScenarioStaleNav,
   loadBlockedScenarioRedemptionClosed,
+  loadBlockedScenarioRevoked,
   resetDemo,
 } from '@/mocks/data';
 
-export type ScenarioType = 'valid' | 'maxTx' | 'cumulative' | 'staleNav' | 'redemptionClosed';
+export type ScenarioType = 'valid' | 'maxTx' | 'cumulative' | 'staleNav' | 'redemptionClosed' | 'revoked';
 
 interface DemoScenarioBarProps {
   activeScenario: ScenarioType;
@@ -31,38 +32,45 @@ export function DemoScenarioBar({
     else if (scenario === 'cumulative') loadBlockedScenarioCumulative();
     else if (scenario === 'staleNav') loadBlockedScenarioStaleNav();
     else if (scenario === 'redemptionClosed') loadBlockedScenarioRedemptionClosed();
+    else if (scenario === 'revoked') loadBlockedScenarioRevoked();
   };
 
   const scenarios: { id: ScenarioType; label: string; badge: string; type: 'success' | 'blocked' | 'warning' }[] = [
     {
       id: 'valid',
-      label: 'Case 1: Valid Execution',
+      label: 'Case A: Authorized + Eligible',
       badge: 'Allowed',
       type: 'success',
     },
     {
       id: 'maxTx',
-      label: 'Case 2: Exceeds Max Tx',
-      badge: 'Blocked',
+      label: 'Case B: Exceeds Max Tx',
+      badge: 'Auth Fail',
       type: 'blocked',
     },
     {
       id: 'cumulative',
-      label: 'Case 3: Cumulative Budget',
-      badge: 'Blocked',
+      label: 'Case B: Budget Exceeded',
+      badge: 'Auth Fail',
+      type: 'blocked',
+    },
+    {
+      id: 'revoked',
+      label: 'Case B: Mandate Revoked',
+      badge: 'Auth Fail',
       type: 'blocked',
     },
     {
       id: 'staleNav',
-      label: 'Case 4: Stale NAV',
+      label: 'Case C: Stale NAV',
       badge: 'Auth ≠ Elig',
       type: 'warning',
     },
     {
       id: 'redemptionClosed',
-      label: 'Case 5: Redemption Closed',
-      badge: 'Blocked',
-      type: 'blocked',
+      label: 'Case C: Redemption Closed',
+      badge: 'Auth ≠ Elig',
+      type: 'warning',
     },
   ];
 
@@ -74,7 +82,7 @@ export function DemoScenarioBar({
             Demo Scenario Harness
           </div>
           <h3 className="text-xs font-semibold text-white mt-0.5">
-            Deterministic Agent Execution Scenarios
+            Deterministic Agent Execution Scenarios — A / B / C
           </h3>
         </div>
 
@@ -87,7 +95,7 @@ export function DemoScenarioBar({
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
         {scenarios.map((sc) => {
           const isActive = activeScenario === sc.id;
           return (
@@ -101,11 +109,15 @@ export function DemoScenarioBar({
               }`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-mono text-gray-500 uppercase">
-                  {sc.id === 'valid' ? 'Case 1' : sc.id === 'maxTx' ? 'Case 2' : sc.id === 'cumulative' ? 'Case 3' : sc.id === 'staleNav' ? 'Case 4' : 'Case 5'}
+                <span className="text-[9px] font-mono text-gray-500 uppercase">
+                  {sc.id === 'valid'
+                    ? 'Case A'
+                    : sc.id === 'staleNav' || sc.id === 'redemptionClosed'
+                    ? 'Case C'
+                    : 'Case B'}
                 </span>
                 <span
-                  className={`text-[9px] font-mono px-1.5 py-0.2 rounded font-semibold ${
+                  className={`text-[9px] font-mono px-1.5 rounded font-semibold ${
                     sc.type === 'success'
                       ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                       : sc.type === 'warning'
@@ -116,13 +128,21 @@ export function DemoScenarioBar({
                   {sc.badge}
                 </span>
               </div>
-              <div className="text-xs font-medium text-gray-200 truncate">
+              <div className="text-xs font-medium text-gray-200 leading-tight">
                 {sc.label.split(':')[1]?.trim() || sc.label}
               </div>
             </button>
           );
         })}
       </div>
+
+      {/* Legend */}
+      <div className="mt-3 pt-3 border-t border-[#1E2229] flex flex-wrap gap-4 text-[10px] font-mono text-gray-500">
+        <span><span className="text-emerald-400">Case A</span> — Auth valid + RWA eligible → ALLOWED</span>
+        <span><span className="text-rose-400">Case B</span> — Authorization failure → BLOCKED</span>
+        <span><span className="text-amber-400">Case C</span> — Valid mandate + ineligible RWA → BLOCKED (core differentiator)</span>
+      </div>
     </div>
   );
 }
+

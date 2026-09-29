@@ -59,6 +59,16 @@ function DepositContent() {
 
   return (
     <div className="panel max-w-xl mx-auto p-6">
+      {/* Architectural note */}
+      <div className="mb-5 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs font-mono text-blue-300">
+        <span className="font-semibold text-blue-400">Note — Direct Vault Path:</span>{' '}
+        This form calls <code className="text-white">TBillVault.deposit()</code> directly. It does{' '}
+        <span className="text-white font-semibold">NOT</span> pass through the{' '}
+        <code className="text-white">AgentExecutionGate</code>. The gate-enforced
+        Authorization ≠ Eligibility boundary applies to{' '}
+        <span className="text-white font-semibold">autonomous agent execution only</span> — see the Operations page.
+      </div>
+
       <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6 bg-[#0E1013] border border-[#1E2229]">
           <TabsTrigger value="deposit" className="text-xs">Deposit tBUSD</TabsTrigger>

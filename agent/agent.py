@@ -55,8 +55,9 @@ class OffChainAgent:
         if config.MOCK_MODE:
             logger.info("Mock mode – oracle eligibility assumed true")
             return True
-        # ``is_eligible`` expects (asset, action). Action ``0`` is a placeholder.
-        eligible = self.oracle.is_eligible(config.ASSET_ADDRESS, 0)
+        # Actions.DEPOSIT = 1 (bitmask bit 0) — matches Types.sol
+        DEPOSIT_ACTION = 1
+        eligible = self.oracle.is_eligible(config.ASSET_ADDRESS, DEPOSIT_ACTION)
         logger.info(f"Oracle eligibility for asset {config.ASSET_ADDRESS}: {eligible}")
         return eligible
 

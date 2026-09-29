@@ -17,13 +17,13 @@ interface TechnicalDetailsProps {
 }
 
 export function TechnicalDetailsDrawer({
-  txHash = '0x330d9e63a14e9f50bc7829a1b41dc95852...',
-  blockNumber = 14829104,
-  mandateId = '0x0000000000000000000000000000000000000000000000000000000000000001',
+  txHash = '',
+  blockNumber,
+  mandateId = '0x2a8a21a89050bb2f5ca9e5e0591e84d6cd8516f26968d1e8421be0e2ddd28970',
   target = ADDRESSES.vault,
   selector = '0x6e553f65 (deposit(uint256,address))',
-  asset = 'USTB (Simulated US Treasury)',
-  action = '0 (DEPOSIT)',
+  asset = 'tBUSD (Simulated testnet stablecoin)',
+  action = '1 (DEPOSIT — bitmask bit 0)',
   amount = '250,000 tBUSD (250000000000000000000000)',
 }: TechnicalDetailsProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,8 +46,8 @@ export function TechnicalDetailsDrawer({
     { label: 'Underlying Asset', value: asset },
     { label: 'Proposed Action', value: action },
     { label: 'Execution Amount', value: String(amount) },
-    { label: 'Block Number', value: String(blockNumber) },
-    { label: 'Tx Hash', value: txHash },
+    ...(blockNumber !== undefined ? [{ label: 'Block Number', value: String(blockNumber) }] : []),
+    { label: 'Tx Hash', value: txHash || 'None yet — execute a transaction to see tx hash' },
   ];
 
   return (

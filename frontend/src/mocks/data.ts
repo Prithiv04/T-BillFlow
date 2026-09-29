@@ -77,6 +77,16 @@ export function loadBlockedScenarioRedemptionClosed() {
   mockRwaState.redemptionOpen = false;
 }
 
+/** Scenario B: Authorization Failure — mandate revoked.
+ *  Valid mandate parameters, but the mandate has been revoked by the institution.
+ *  Demonstrates that the gate blocks even if RWA is fully eligible.
+ */
+export function loadBlockedScenarioRevoked() {
+  loadSuccessScenario();
+  // Revoke the mandate — all RWA conditions remain healthy
+  mockMandate.revoked = true;
+}
+
 export function resetDemo() {
   loadSuccessScenario();
   mockTxHistory.length = 0;
