@@ -2,24 +2,34 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IRWAStateOracle} from "./IRWAStateOracle.sol";
 import {Actions, ActionMask} from "./Types.sol";
 
 // ============================================================
-//  RWAStateOracle.sol — Phase 2 Implementation
+//  RWAStateOracle.sol — Production & Attestation Hardened
 //
-//  A simulated/hackathon RWA state oracle providing:
+//  Authoritative on-chain RWA state oracle providing:
 //   - Action-specific eligibility checks: isEligible(asset, action)
 //   - NAV tracking and time-window staleness enforcement
 //   - Redemption window open/closed status
 //   - Liquidity tier tracking and threshold validation
-//   - Controlled administrative simulation functions
+//   - Approved institutional data provider role & attestation verification
+//   - EIP-712 cryptographic attestation updates
 // ============================================================
 
-contract RWAStateOracle is IRWAStateOracle, Ownable {
+contract RWAStateOracle is IRWAStateOracle, EIP712, Ownable {
+    using ECDSA for bytes32;
+
     // -------------------------------------------------------
     // State Variables
     // -------------------------------------------------------
+
+    /// @dev Typehash for EIP-712 RWA attestation
+    bytes32 public constant ATTESTATION_TYPEHASH = keccak256(
+        "RWAAttestation(address asset,uint256 nav,uint256 navTimestamp,bool redemptionOpen,uint8 liquidityTier,uint256 nonce,uint256 deadline)"
+    );
 
     /// @dev Minimum liquidity tier required for Actions.ALLOCATE (default: 1).
     /// Tier 0 = illiquid, 1 = low, 2 = medium, 3 = high.
@@ -28,12 +38,32 @@ contract RWAStateOracle is IRWAStateOracle, Ownable {
     /// @dev Mapping from asset address to its current state.
     mapping(address => AssetState) private _assetStates;
 
+    /// @dev Mapping of approved data providers / oracle signers.
+    mapping(address => bool) public override isApprovedProvider;
+
+    /// @dev Anti-replay protection for submitted attestations.
+    mapping(bytes32 => bool) public executedAttestations;
+
+    // -------------------------------------------------------
+    // Modifiers
+    // -------------------------------------------------------
+
+    modifier onlyAuthorizedUpdater() {
+        if (msg.sender != owner() && !isApprovedProvider[msg.sender]) {
+            revert UnauthorizedProvider();
+        }
+        _;
+    }
+
     // -------------------------------------------------------
     // Constructor
     // -------------------------------------------------------
 
-    /// @param initialOwner Address of the contract owner (admin/simulator).
-    constructor(address initialOwner) Ownable(initialOwner) {
+    /// @param initialOwner Address of the contract owner (admin/governance).
+    constructor(address initialOwner)
+        EIP712("TBillFlow-RWA-Oracle", "1")
+        Ownable(initialOwner)
+    {
         require(initialOwner != address(0), "zero initial owner");
     }
 
@@ -150,12 +180,19 @@ contract RWAStateOracle is IRWAStateOracle, Ownable {
     }
 
     /// @inheritdoc IRWAStateOracle
+    function setApprovedProvider(address provider, bool approved) external onlyOwner {
+        require(provider != address(0), "zero provider address");
+        isApprovedProvider[provider] = approved;
+        emit ProviderUpdated(provider, approved);
+    }
+
+    /// @inheritdoc IRWAStateOracle
     function updateAssetState(
         address asset,
         uint256 newNav,
         bool redemptionOpen,
         uint8 liquidityTier
-    ) external onlyOwner {
+    ) external onlyAuthorizedUpdater {
         AssetState storage state = _assetStates[asset];
         if (!state.supported) {
             revert AssetNotSupported();
@@ -173,6 +210,71 @@ contract RWAStateOracle is IRWAStateOracle, Ownable {
             redemptionOpen,
             liquidityTier
         );
+    }
+
+    /// @inheritdoc IRWAStateOracle
+    function updateAssetStateWithAttestation(
+        RWAAttestation calldata attestation,
+        bytes calldata signature
+    ) external {
+        if (block.timestamp > attestation.deadline) {
+            revert InvalidAttestationDeadline();
+        }
+        if (attestation.navTimestamp > block.timestamp) {
+            revert FutureAttestationTimestamp();
+        }
+
+        bytes32 attestationHash = keccak256(
+            abi.encodePacked(attestation.asset, attestation.nonce)
+        );
+        if (executedAttestations[attestationHash]) {
+            revert AttestationAlreadyUsed();
+        }
+
+        AssetState storage state = _assetStates[attestation.asset];
+        if (!state.supported) {
+            revert AssetNotSupported();
+        }
+        if (attestation.navTimestamp <= state.navUpdatedAt) {
+            revert StaleAttestationTimestamp();
+        }
+
+        bytes32 structHash = keccak256(
+            abi.encode(
+                ATTESTATION_TYPEHASH,
+                attestation.asset,
+                attestation.nav,
+                attestation.navTimestamp,
+                attestation.redemptionOpen,
+                attestation.liquidityTier,
+                attestation.nonce,
+                attestation.deadline
+            )
+        );
+
+        bytes32 digest = _hashTypedDataV4(structHash);
+        address signer = ECDSA.recover(digest, signature);
+
+        if (!isApprovedProvider[signer]) {
+            revert UnauthorizedProvider();
+        }
+
+        executedAttestations[attestationHash] = true;
+
+        state.nav = attestation.nav;
+        state.navUpdatedAt = attestation.navTimestamp;
+        state.redemptionOpen = attestation.redemptionOpen;
+        state.liquidityTier = attestation.liquidityTier;
+
+        emit AssetStateUpdated(
+            attestation.asset,
+            attestation.nav,
+            attestation.navTimestamp,
+            attestation.redemptionOpen,
+            attestation.liquidityTier
+        );
+
+        emit AttestationProcessed(attestationHash, signer, attestation.asset);
     }
 
     /// @inheritdoc IRWAStateOracle

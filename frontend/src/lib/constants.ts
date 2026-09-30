@@ -3,16 +3,25 @@
 // Deployed via: contracts/broadcast/Deploy.s.sol/421614/run-latest.json
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const CHAIN_ID = 421614;
+export const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 421614);
 export const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || 'https://sepolia-rollup.arbitrum.io/rpc';
-export const EXPLORER_URL = 'https://sepolia.arbiscan.io';
+export const EXPLORER_URL =
+  process.env.NEXT_PUBLIC_EXPLORER_URL ||
+  (CHAIN_ID === 42161 ? 'https://arbiscan.io' : 'https://sepolia.arbiscan.io');
 
 // ── Deployed contract addresses ───────────────────────────────────────────────
-export const TBILL_VAULT_ADDRESS    = '0x2f9453ece66d76431e3acbe33770c60d79adcda5' as const;
-export const TBUSD_ADDRESS          = '0xcde2fb76d39d060314231b15fd4d2719d6c2b354' as const;
-export const RWA_ORACLE_ADDRESS     = '0x3ec0fec36de1f05087dbda93c2335182383defed' as const;
-export const MANDATE_REGISTRY_ADDRESS = '0x221c9a9f1a6eed91642955baee3208c2fc901d1d' as const;
-export const EXECUTION_GATE_ADDRESS = '0xd39a16c7f36b6e103903342c0abd98fcf1f7c88d' as const;
+export const TBILL_VAULT_ADDRESS = (process.env.NEXT_PUBLIC_TBILL_VAULT_ADDRESS ||
+  '0x2f9453ece66d76431e3acbe33770c60d79adcda5') as `0x${string}`;
+export const TBUSD_ADDRESS = (process.env.NEXT_PUBLIC_TBUSD_ADDRESS ||
+  '0xcde2fb76d39d060314231b15fd4d2719d6c2b354') as `0x${string}`;
+export const RWA_ORACLE_ADDRESS = (process.env.NEXT_PUBLIC_RWA_ORACLE_ADDRESS ||
+  '0x3ec0fec36de1f05087dbda93c2335182383defed') as `0x${string}`;
+export const MANDATE_REGISTRY_ADDRESS = (process.env.NEXT_PUBLIC_MANDATE_REGISTRY_ADDRESS ||
+  '0x221c9a9f1a6eed91642955baee3208c2fc901d1d') as `0x${string}`;
+export const EXECUTION_GATE_ADDRESS = (process.env.NEXT_PUBLIC_EXECUTION_GATE_ADDRESS ||
+  '0xd39a16c7f36b6e103903342c0abd98fcf1f7c88d') as `0x${string}`;
+export const COMPLIANCE_REGISTRY_ADDRESS = (process.env.NEXT_PUBLIC_COMPLIANCE_REGISTRY_ADDRESS ||
+  '') as `0x${string}`;
 
 // Legacy / UI compatibility aliases
 export const TBILL_SHARE_ADDRESS  = TBILL_VAULT_ADDRESS;

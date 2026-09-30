@@ -26,6 +26,8 @@ interface IRWAStateOracle {
     event AssetSupported(address indexed asset, uint256 maxNavAge);
     event AssetRemoved(address indexed asset);
     event RedemptionStatusChanged(address indexed asset, bool open);
+    event ProviderUpdated(address indexed provider, bool approved);
+    event AttestationProcessed(bytes32 indexed attestationHash, address indexed provider, address indexed asset);
 
     // -------------------------------------------------------
     // Errors
@@ -35,9 +37,15 @@ interface IRWAStateOracle {
     error NavStale();
     error RedemptionClosed();
     error LiquidityTooLow();
+    error UnauthorizedProvider();
+    error InvalidAttestationDeadline();
+    error FutureAttestationTimestamp();
+    error StaleAttestationTimestamp();
+    error AttestationAlreadyUsed();
+    error InvalidAttestationSignature();
 
     // -------------------------------------------------------
-    // Asset state struct
+    // Asset state struct & Attestation struct
     // -------------------------------------------------------
 
     struct AssetState {
@@ -47,6 +55,16 @@ interface IRWAStateOracle {
         uint8   liquidityTier;  // 0 = illiquid, 1 = low, 2 = medium, 3 = high
         bool    supported;      // True if asset is known to the oracle
         uint256 maxNavAge;      // Maximum acceptable NAV staleness (seconds)
+    }
+
+    struct RWAAttestation {
+        address asset;
+        uint256 nav;
+        uint256 navTimestamp;
+        bool    redemptionOpen;
+        uint8   liquidityTier;
+        uint256 nonce;
+        uint256 deadline;
     }
 
     // -------------------------------------------------------
@@ -72,6 +90,8 @@ interface IRWAStateOracle {
 
     function isRedemptionOpen(address asset) external view returns (bool);
 
+    function isApprovedProvider(address provider) external view returns (bool);
+
     // -------------------------------------------------------
     // Admin / simulation write functions
     // -------------------------------------------------------
@@ -92,4 +112,13 @@ interface IRWAStateOracle {
 
     /// @notice Toggle redemption status independently.
     function setRedemptionOpen(address asset, bool open) external;
+
+    /// @notice Authorize or revoke an approved data provider.
+    function setApprovedProvider(address provider, bool approved) external;
+
+    /// @notice Update asset state via a cryptographically signed EIP-712 attestation from an approved provider.
+    function updateAssetStateWithAttestation(
+        RWAAttestation calldata attestation,
+        bytes calldata signature
+    ) external;
 }

@@ -8,6 +8,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IExecutionGate} from "./IExecutionGate.sol";
 import {IAgentMandateRegistry} from "./IAgentMandateRegistry.sol";
 import {IRWAStateOracle} from "./IRWAStateOracle.sol";
+import {IComplianceRegistry} from "./IComplianceRegistry.sol";
 import {ExecutionRequest, Actions, ActionMask} from "./Types.sol";
 
 // ============================================================
@@ -20,11 +21,12 @@ import {ExecutionRequest, Actions, ActionMask} from "./Types.sol";
 //  - Identical validation in canExecute() simulation
 //  - Emergency pause / unpause controls
 //  - Lifetime cumulative usage tracking via MandateRegistry
+//  - Investor KYC/AML and Transfer Policy via ComplianceRegistry
 // ============================================================
 
 contract AgentExecutionGate is IExecutionGate, Pausable, Ownable, ReentrancyGuard {
     // -------------------------------------------------------
-    // Immutables
+    // Immutables & Configurable Registries
     // -------------------------------------------------------
 
     /// @notice Authoritative mandate registry.
@@ -33,9 +35,14 @@ contract AgentExecutionGate is IExecutionGate, Pausable, Ownable, ReentrancyGuar
     /// @notice Authoritative RWA state oracle.
     IRWAStateOracle public immutable rwaOracle;
 
+    /// @notice Optional production compliance and KYC registry.
+    IComplianceRegistry public complianceRegistry;
+
     // -------------------------------------------------------
-    // State Variables
+    // State Variables & Events
     // -------------------------------------------------------
+
+    event ComplianceRegistryUpdated(address indexed newRegistry);
 
     /// @dev target => selector => allowed
     mapping(address => mapping(bytes4 => bool)) private _allowedSelectors;
@@ -111,6 +118,21 @@ contract AgentExecutionGate is IExecutionGate, Pausable, Ownable, ReentrancyGuar
 
         // 4. RWA asset eligibility
         rwaOracle.isEligible(req.asset, req.action);
+
+        // 5. Investor KYC, Sanction & Transfer Policy (if compliance registry configured)
+        if (address(complianceRegistry) != address(0)) {
+            address ownerOfMandate = mandateRegistry.mandateOwner(req.mandateId);
+            (bool eligible, bytes memory compReason) = complianceRegistry.isWalletEligible(
+                ownerOfMandate,
+                req.asset,
+                req.action
+            );
+            if (!eligible) {
+                assembly {
+                    revert(add(compReason, 32), mload(compReason))
+                }
+            }
+        }
     }
 
     /// @notice External view helper exposed for canExecute() simulation.
@@ -204,6 +226,12 @@ contract AgentExecutionGate is IExecutionGate, Pausable, Ownable, ReentrancyGuar
     function unpause() external onlyOwner {
         _unpause();
         emit GateWasUnpaused(msg.sender);
+    }
+
+    /// @notice Configure or remove production compliance registry.
+    function setComplianceRegistry(address _complianceRegistry) external onlyOwner {
+        complianceRegistry = IComplianceRegistry(_complianceRegistry);
+        emit ComplianceRegistryUpdated(_complianceRegistry);
     }
 
     // -------------------------------------------------------

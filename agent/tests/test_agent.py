@@ -23,14 +23,16 @@ def set_env(monkeypatch):
     import agent.config as cfg
     importlib.reload(cfg)
     yield
+    importlib.reload(cfg)
 
 # Helper to build a minimal OffChainAgent with mocked contract objects
 @pytest.fixture
 def agent_with_mocks(monkeypatch):
     from agent.agent import OffChainAgent
-    # Create mock contract objects
     mock_gate = MagicMock()
+    mock_gate.is_paused.return_value = False
     mock_oracle = MagicMock()
+    mock_oracle.is_nav_fresh.return_value = True
     mock_vault = MagicMock()
 
     # Patch the constructors in contracts module to return our mocks
@@ -40,8 +42,11 @@ def agent_with_mocks(monkeypatch):
     monkeypatch.setattr(contracts, "TBillVault", lambda address, w3: mock_vault)
 
     # Patch the web3 builder to avoid real network calls
-    from agent.agent import _build_web3
-    monkeypatch.setattr("agent.agent._build_web3", lambda: MagicMock())
+    mock_w3 = MagicMock()
+    mock_account = MagicMock()
+    mock_account.address = "0x1111111111111111111111111111111111111111"
+    mock_w3.eth.account.from_key.return_value = mock_account
+    monkeypatch.setattr("agent.agent._build_web3", lambda: mock_w3)
 
     # Instantiate the agent – it will receive the mocked contracts
     agent = OffChainAgent()

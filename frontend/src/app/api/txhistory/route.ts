@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Arbitrum Sepolia — Arbiscan API
-const ARBISCAN_API = "https://api-sepolia.arbiscan.io/api";
-const TBILL_VAULT_ADDRESS = "0x2f9453ece66d76431e3acbe33770c60d79adcda5";
+// Arbiscan API & Vault Address (defaults to Arbitrum Sepolia testnet)
+const ARBISCAN_API = process.env.ARBISCAN_API_URL ?? "https://api-sepolia.arbiscan.io/api";
+const TBILL_VAULT_ADDRESS =
+  process.env.TBILL_VAULT_ADDRESS ??
+  process.env.NEXT_PUBLIC_TBILL_VAULT_ADDRESS ??
+  "0x2f9453ece66d76431e3acbe33770c60d79adcda5";
 
 export async function GET(req: NextRequest) {
   const address = req.nextUrl.searchParams.get("address");
