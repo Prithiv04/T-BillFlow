@@ -1,12 +1,13 @@
 # Core off-chain agent implementation for T-BillFlow
-"""Rule-based off-chain agent that monitors a synthetic yield opportunity and, when
+"""Rule-based off-chain agent that monitors a yield opportunity and, when
 all on-chain checks pass, executes through ``AgentExecutionGate``.
 
 * No secrets are printed or logged.
-* ``CURRENT_YIELD`` is a configurable value (from environment — synthetic/testnet).
+* In LIVE mode, yield is read from the FRED API (DTB4WK) when FRED_API_KEY is set.
+* When FRED is unavailable or not configured, CURRENT_YIELD (from .env) is used as
+  a static fallback — this is logged at WARNING level so operators are aware.
 * ``MOCK_MODE`` enables dry-run testing without a live node.
-* LIVE mode uses the RPC and contracts from config.NETWORK / config.RPC_URL.
-* LIVE mode NEVER falls back to mock data or simulated values.
+* LIVE mode NEVER silently falls back to mock data or simulated values.
 """
 
 import time
@@ -16,6 +17,7 @@ from web3 import Web3
 
 from . import config
 from . import contracts as contracts_module
+from .rwa_provider import fetch_fred_treasury_yield
 from .logger import get_logger
 
 logger = get_logger(__name__)
@@ -65,10 +67,44 @@ class OffChainAgent:
     # ─────────────────────────────────────────────────────────────
 
     def _yield_ok(self) -> bool:
-        ok = config.CURRENT_YIELD >= config.YIELD_THRESHOLD
+        """Evaluate whether current yield meets the configured threshold.
+
+        In LIVE mode: attempts to fetch the real 4-Week T-Bill rate from FRED
+        (DTB4WK series) when FRED_API_KEY is configured. Falls back to the
+        static CURRENT_YIELD env value with a WARNING if FRED is unavailable.
+
+        In MOCK mode: uses CURRENT_YIELD directly without any external call.
+        """
+        current_yield = config.CURRENT_YIELD
+        yield_source = "config (CURRENT_YIELD)"
+
+        if not config.MOCK_MODE and config.FRED_API_KEY:
+            fred_yield = fetch_fred_treasury_yield(
+                config.FRED_API_KEY, series_id="DTB4WK"
+            )
+            if fred_yield is not None:
+                current_yield = fred_yield
+                yield_source = "FRED API (DTB4WK — live secondary market rate)"
+            else:
+                logger.warning(
+                    "FRED yield unavailable — falling back to static CURRENT_YIELD=%.2f%%. "
+                    "This is a configured value, NOT a live market rate. "
+                    "Set FRED_API_KEY for live yield evaluation.",
+                    config.CURRENT_YIELD,
+                )
+        elif not config.MOCK_MODE and not config.FRED_API_KEY:
+            logger.warning(
+                "FRED_API_KEY not configured — using static CURRENT_YIELD=%.2f%% for "
+                "yield evaluation. This is NOT a live market rate. "
+                "Set FRED_API_KEY in .env to enable real yield assessment.",
+                config.CURRENT_YIELD,
+            )
+
+        ok = current_yield >= config.YIELD_THRESHOLD
         logger.info(
-            "Synthetic yield %.2f%% vs threshold %.2f%% — %s",
-            config.CURRENT_YIELD,
+            "Yield check: %.2f%% [source: %s] vs threshold %.2f%% — %s",
+            current_yield,
+            yield_source,
             config.YIELD_THRESHOLD,
             "OK" if ok else "below threshold",
         )

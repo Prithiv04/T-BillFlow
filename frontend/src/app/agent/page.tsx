@@ -20,8 +20,8 @@ export default function AgentPage() {
   const liveRwa = useLiveRwaState();
   const liveMandate = useLiveMandate(DEMO_MANDATE_ID);
 
-  // Demo: use mock data. Live: use on-chain data.
-  const currentYield = mockYield;
+  // Demo: use mock data. Live: use live Treasury data.
+  const currentYield = isDemo ? mockYield : (treasuryData.yield ?? 0);
   const isYieldOk = isDemo
     ? currentYield >= YIELD_THRESHOLD
     : treasuryData.yield !== null && treasuryData.yield >= YIELD_THRESHOLD;

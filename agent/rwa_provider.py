@@ -69,6 +69,8 @@ _REQUIRED_PROVIDER_FIELDS = {"nav_wei", "timestamp", "redemption_open", "liquidi
 
 # SIFMA / Federal Reserve U.S. Bond Market Observed Holidays
 # Primary redemptions and physical Treasury settlement cannot settle on these days.
+# NOTE: This calendar covers 2025–2026. For calendar years 2027 and beyond, add
+# dates from the official SIFMA holiday schedule (https://www.sifma.org/resources/general/holiday-schedule/).
 SIFMA_HOLIDAYS = {
     # 2025
     "2025-01-01", "2025-01-20", "2025-02-17", "2025-04-18",

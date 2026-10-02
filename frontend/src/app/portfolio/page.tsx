@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
-import { Wallet, ArrowDownRight, ArrowUpRight, TrendingUp, Building2, CheckCircle2 } from 'lucide-react';
+import { Wallet, ArrowDownRight, ArrowUpRight, TrendingUp, Building2, CheckCircle2, Loader2 } from 'lucide-react';
 import { useMode } from '@/context/ModeContext';
 import { useVault } from '@/hooks/useVault';
-import { formatUnits } from 'viem';
+import { formatUnits, parseUnits } from 'viem';
+import { usePublicClient } from 'wagmi';
 import { useTreasuryYield } from '@/hooks/useTreasuryYield';
 import { useLiveRwaState } from '@/hooks/useLiveRwaState';
 import { SHARE_RATE } from '@/lib/constants';
@@ -19,12 +20,18 @@ export default function PortfolioPage() {
     tbusdBalance,
     isBalanceLoading,
     isPortfolioLoading,
+    deposit,
+    redeem,
+    approve,
+    refetchAll,
   } = useVault();
+  const publicClient = usePublicClient();
   const treasuryData = useTreasuryYield();
   const liveRwa = useLiveRwaState();
   const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw'>('deposit');
   const [amount, setAmount] = useState('');
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'pending' | 'success'>('idle');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // ── Derive values with strict separation ─────────────────────────────────────
   let totalValueDisplay = '$1,284,320.00';
@@ -100,13 +107,52 @@ export default function PortfolioPage() {
     }
   }
 
-  const handleAction = (e: React.FormEvent) => {
+  const handleAction = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setAmount('');
-    }, 2000);
+    if (!amount || parseFloat(amount) <= 0) return;
+    setErrorMsg(null);
+
+    if (isDemo) {
+      setStatus('pending');
+      setTimeout(() => {
+        setStatus('success');
+        setTimeout(() => {
+          setStatus('idle');
+          setAmount('');
+        }, 2000);
+      }, 800);
+      return;
+    }
+
+    if (!isConnected) {
+      setErrorMsg('Please connect your wallet first.');
+      return;
+    }
+
+    setStatus('pending');
+    try {
+      if (activeTab === 'deposit') {
+        const parsedAmount = parseUnits(amount, 18);
+        const approveHash = await approve(parsedAmount);
+        if (publicClient) {
+          await publicClient.waitForTransactionReceipt({ hash: approveHash });
+        }
+        await deposit(parsedAmount);
+      } else {
+        const parsedShares = parseUnits(amount, 18);
+        await redeem(parsedShares);
+      }
+      setStatus('success');
+      refetchAll();
+      setTimeout(() => {
+        setStatus('idle');
+        setAmount('');
+      }, 2500);
+    } catch (err: any) {
+      console.error('Portfolio transaction failed:', err);
+      setErrorMsg(err?.shortMessage || err?.message || 'Transaction failed');
+      setStatus('idle');
+    }
   };
 
   return (
@@ -198,7 +244,7 @@ export default function PortfolioPage() {
                       <span>USTB</span>
                     </div>
                   </td>
-                  <td className="text-gray-400">US Treasury Bill (3M)</td>
+                  <td className="text-gray-400">{isDemo ? "US Treasury Bill (3M)" : "T-BillFlow Vault Shares (tBUSD/Testnet)"}</td>
                   <td className="font-mono text-white">{ustbNavDisplay}</td>
                   <td className="font-mono text-white font-medium">
                     {ustbPositionValueDisplay}
@@ -328,22 +374,35 @@ export default function PortfolioPage() {
 
               <button
                 type="submit"
-                className="w-full py-2 px-3 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition-colors flex items-center justify-center gap-1.5 mt-2"
+                disabled={status === 'pending'}
+                className="w-full py-2 px-3 rounded-md bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium text-xs transition-colors flex items-center justify-center gap-1.5 mt-2"
               >
-                {submitted ? (
+                {status === 'pending' ? (
                   <>
-                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Processing {activeTab === 'deposit' ? 'Deposit' : 'Redemption'}...</span>
+                  </>
+                ) : status === 'success' ? (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
                     <span>Transaction Confirmed</span>
                   </>
                 ) : (
                   <span>Submit {activeTab === 'deposit' ? 'Deposit' : 'Redemption'} Request</span>
                 )}
               </button>
+              {errorMsg && (
+                <div className="text-[11px] text-red-400 font-mono mt-1 text-center">
+                  {errorMsg}
+                </div>
+              )}
             </form>
           </div>
 
           <div className="pt-3 border-t border-[#1E2229] text-[10px] text-gray-500 font-mono mt-4">
-            Underlying RWA: 3-Month US Treasury Bills via Arbitrum Sepolia
+            {isDemo
+              ? "Underlying RWA: 3-Month US Treasury Bills (Demo Simulation)"
+              : "Underlying: Simulated tBUSD — Testnet vault. Not real T-Bill custody."}
           </div>
         </div>
       </div>
