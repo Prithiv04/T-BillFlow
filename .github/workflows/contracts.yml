@@ -28,7 +28,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: contracts
-        run: echo "Dependencies vendored, skipping forge install"
+        run: forge install foundry-rs/forge-std openzeppelin/openzeppelin-contracts --no-git --no-commit
 
       - name: Compile contracts
         working-directory: contracts
@@ -58,6 +58,10 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
+
+      - name: Install dependencies
+        working-directory: contracts
+        run: forge install foundry-rs/forge-std openzeppelin/openzeppelin-contracts --no-git --no-commit
 
       - name: Install Slither
         run: pip3 install slither-analyzer
