@@ -5,10 +5,12 @@ on:
     branches: [main, dev]
     paths:
       - "contracts/**"
+      - ".github/workflows/contracts.yml"
   pull_request:
     branches: [main]
     paths:
       - "contracts/**"
+      - ".github/workflows/contracts.yml"
 
 jobs:
   build-and-test:

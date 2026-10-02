@@ -27,6 +27,13 @@ $ forge build
 $ forge test
 ```
 
+### Strict Verification
+
+```shell
+$ forge build --deny warnings
+$ forge test
+```
+
 ### Format
 
 ```shell
