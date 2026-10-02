@@ -6,6 +6,7 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IRWAStateOracle} from "./IRWAStateOracle.sol";
 import {Actions, ActionMask} from "./Types.sol";
+import {AggregatorV3Interface} from "./interfaces/AggregatorV3Interface.sol";
 
 // ============================================================
 //  RWAStateOracle.sol — Production & Attestation Hardened
@@ -43,6 +44,9 @@ contract RWAStateOracle is IRWAStateOracle, EIP712, Ownable {
 
     /// @dev Anti-replay protection for submitted attestations.
     mapping(bytes32 => bool) public executedAttestations;
+
+    /// @dev Mapping from asset address to its configured Chainlink/OpenEden AggregatorV3Interface feed.
+    mapping(address => address) private _assetPriceFeeds;
 
     // -------------------------------------------------------
     // Modifiers
@@ -302,5 +306,73 @@ contract RWAStateOracle is IRWAStateOracle, EIP712, Ownable {
         }
         state.maxNavAge = newMaxNavAge;
         emit AssetSupported(asset, newMaxNavAge);
+    }
+
+    /// @inheritdoc IRWAStateOracle
+    function getAssetFeed(address asset) external view returns (address) {
+        return _assetPriceFeeds[asset];
+    }
+
+    /// @inheritdoc IRWAStateOracle
+    function setAssetFeed(address asset, address feed) external onlyOwner {
+        require(asset != address(0), "zero asset address");
+        if (!_assetStates[asset].supported) {
+            revert AssetNotSupported();
+        }
+        _assetPriceFeeds[asset] = feed;
+        emit AssetFeedConfigured(asset, feed);
+    }
+
+    /// @inheritdoc IRWAStateOracle
+    function syncFromFeed(address asset) external {
+        address feed = _assetPriceFeeds[asset];
+        if (feed == address(0)) {
+            revert NoFeedConfigured();
+        }
+        AssetState storage state = _assetStates[asset];
+        if (!state.supported) {
+            revert AssetNotSupported();
+        }
+
+        (
+            uint80 roundId,
+            int256 answer,
+            ,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = AggregatorV3Interface(feed).latestRoundData();
+
+        if (answer <= 0) {
+            revert InvalidOraclePrice();
+        }
+        if (updatedAt == 0) {
+            revert InvalidOracleTimestamp();
+        }
+        if (updatedAt > block.timestamp) {
+            revert FutureAttestationTimestamp();
+        }
+        if (answeredInRound < roundId) {
+            revert StaleAttestationTimestamp();
+        }
+
+        uint8 feedDecimals = AggregatorV3Interface(feed).decimals();
+        uint256 normalizedNav;
+        if (feedDecimals <= 18) {
+            normalizedNav = uint256(answer) * (10 ** (18 - feedDecimals));
+        } else {
+            normalizedNav = uint256(answer) / (10 ** (feedDecimals - 18));
+        }
+
+        state.nav = normalizedNav;
+        state.navUpdatedAt = updatedAt;
+
+        emit AssetStateUpdated(
+            asset,
+            normalizedNav,
+            updatedAt,
+            state.redemptionOpen,
+            state.liquidityTier
+        );
+        emit FeedSynchronized(asset, feed, normalizedNav, updatedAt);
     }
 }

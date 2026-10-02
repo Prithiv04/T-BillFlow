@@ -9,8 +9,13 @@ from agent.settlement import CustodySettlementManager, SettlementState
 from agent.monitor import ProductionMonitor
 
 
-def test_rwa_provider_missing_credentials():
-    provider = RWADataProvider(provider_url=None)
+def test_rwa_provider_missing_credentials(monkeypatch):
+    import agent.config as cfg
+    monkeypatch.setattr(cfg, "MOCK_MODE", False)
+    monkeypatch.setattr(cfg, "NETWORK", "arbitrum_sepolia")
+    monkeypatch.setattr(cfg, "RWA_DATA_PROVIDER_URL", None)
+    monkeypatch.setattr(cfg, "RWA_PRICE_FEED_ADDRESS", None)
+    provider = RWADataProvider(provider_url=None, feed_address=None)
     res = provider.fetch_live_rwa_state("0xAsset")
     assert res["status"] == "external_dependency_required"
     assert "Missing RWA_DATA_PROVIDER_URL" in res["error"]
@@ -149,5 +154,81 @@ def test_indexer_client_demo_mode(monkeypatch):
     res = client.get_execution_history("0xmandate123")
     assert res["status"] == "demo_simulation"
     assert len(res["executions"]) > 0
+
+
+def test_is_us_treasury_market_open():
+    from agent.rwa_provider import is_us_treasury_market_open
+    from zoneinfo import ZoneInfo
+    import datetime
+
+    tz = ZoneInfo("America/New_York")
+    # Tuesday 11:00 AM EST (Regular business hours)
+    open_dt = datetime.datetime(2026, 4, 7, 11, 0, 0, tzinfo=tz)
+    is_open, reason = is_us_treasury_market_open(open_dt)
+    assert is_open is True
+    assert "active" in reason.lower()
+
+    # Sunday 11:00 AM EST (Weekend)
+    weekend_dt = datetime.datetime(2026, 4, 5, 11, 0, 0, tzinfo=tz)
+    is_open, reason = is_us_treasury_market_open(weekend_dt)
+    assert is_open is False
+    assert "weekend" in reason.lower()
+
+    # Good Friday 2026 (April 3, 2026 - SIFMA holiday)
+    holiday_dt = datetime.datetime(2026, 4, 3, 11, 0, 0, tzinfo=tz)
+    is_open, reason = is_us_treasury_market_open(holiday_dt)
+    assert is_open is False
+    assert "holiday" in reason.lower()
+
+    # Tuesday 3:00 PM EST (After 2:00 PM cutoff)
+    after_cutoff_dt = datetime.datetime(2026, 4, 7, 15, 0, 0, tzinfo=tz)
+    is_open, reason = is_us_treasury_market_open(after_cutoff_dt)
+    assert is_open is False
+    assert "cutoff" in reason.lower()
+
+
+def test_fetch_onchain_feed_nav():
+    from unittest.mock import MagicMock
+    from agent.rwa_provider import fetch_onchain_feed_nav
+
+    mock_w3 = MagicMock()
+    mock_contract = MagicMock()
+    mock_w3.eth.contract.return_value = mock_contract
+
+    # Mock 8 decimals, price $1.0525 (105250000), round 10, updated 1700000000
+    mock_contract.functions.decimals().call.return_value = 8
+    mock_contract.functions.latestRoundData().call.return_value = (
+        10, 105250000, 1700000000, 1700000000, 10
+    )
+
+    feed_res = fetch_onchain_feed_nav(mock_w3, "0xc0952c8ba068c887B675B4182F3A65420D045F46")
+    # 105250000 * 10^10 = 1052500000000000000 (1.0525e18)
+    assert feed_res["nav_wei"] == 1052500000000000000
+    assert feed_res["timestamp"] == 1700000000
+
+
+def test_rwa_provider_onchain_feed(monkeypatch):
+    from unittest.mock import MagicMock
+    import agent.config as cfg
+    monkeypatch.setattr(cfg, "MOCK_MODE", False)
+    monkeypatch.setattr(cfg, "NETWORK", "arbitrum_one")
+
+    mock_w3 = MagicMock()
+    mock_contract = MagicMock()
+    mock_w3.eth.contract.return_value = mock_contract
+    mock_contract.functions.decimals().call.return_value = 8
+    mock_contract.functions.latestRoundData().call.return_value = (
+        1, 105300000, 1700000000, 1700000000, 1
+    )
+
+    provider = RWADataProvider(
+        feed_address="0xc0952c8ba068c887B675B4182F3A65420D045F46",
+        w3=mock_w3,
+    )
+    state = provider.fetch_live_rwa_state("0xF84D28A8D28292842dD73D1c5F99476A80b6666A")
+    assert state["status"] == "success"
+    assert state["source"] == "arbitrum_onchain_feed"
+    assert state["nav"] == 1053000000000000000
+
 
 

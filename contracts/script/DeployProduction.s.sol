@@ -173,12 +173,26 @@ contract DeployProductionScript is Script {
         gate.setSelectorAllowed(address(vault), withdrawSel, true);
         gate.setSelectorAllowed(address(vault), allocateSel, true);
 
-        // 9. Register the settlement token in the oracle.
-        //    NOTE: updateAssetState() must be called by an approved provider BEFORE any
-        //    execution — oracle will reject all executions until NAV is set.
-        //    EXTERNAL_DEPENDENCY: call oracle.setApprovedProvider(signerAddress, true)
-        //    after deployment using the ORACLE_ATTESTATION_SIGNER_KEY address.
+        // 9. Register the settlement token and OpenEden TBILL in the oracle.
         oracle.addAsset(settlementToken, MAX_NAV_AGE_SECONDS);
+
+        // Bind canonical OpenEden TBILL asset and its on-chain Price Oracle (AggregatorV3)
+        address openEdenTbill = 0xF84D28A8D28292842dD73D1c5F99476A80b6666A;
+        address openEdenOracle = 0xc0952c8ba068c887B675B4182F3A65420D045F46;
+        oracle.addAsset(openEdenTbill, MAX_NAV_AGE_SECONDS);
+        oracle.setAssetFeed(openEdenTbill, openEdenOracle);
+        oracle.setRedemptionOpen(openEdenTbill, true);
+
+        // Configure asset in RWAAssetRegistry
+        assetReg.configureAsset(
+            openEdenTbill,
+            settlementToken,
+            6,   // USDC decimals
+            18,  // TBILL decimals
+            100_000_000, // min subscription: 100 USDC
+            true,
+            "State Street / BNY Mellon Custody"
+        );
 
         vm.stopBroadcast();
 

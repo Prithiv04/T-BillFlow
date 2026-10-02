@@ -60,6 +60,17 @@ else:
 ASSET_ADDRESS = os.getenv("RWA_ASSET_ADDRESS", SETTLEMENT_ASSET_ADDRESS)
 
 # ─── Production data provider & attestation credentials ──────────────────────
+# Canonical Arbitrum One Tokenized Treasury addresses
+ARBITRUM_ONE_OPENEDEN_TBILL = "0xF84D28A8D28292842dD73D1c5F99476A80b6666A"
+ARBITRUM_ONE_TBILL_ORACLE = "0xc0952c8ba068c887B675B4182F3A65420D045F46"
+ARBITRUM_ONE_ONDO_USDY = "0x35e050d3C0eC2d29D269a8EcEa763a183bDF9A9D"
+
+# On-chain Chainlink / OpenEden AggregatorV3 price feed address (e.g. 0xc095... on Arbitrum One)
+RWA_PRICE_FEED_ADDRESS = os.getenv("RWA_PRICE_FEED_ADDRESS")
+
+# Federal Reserve Economic Data (FRED) API key for live US Treasury yields (DTB4WK series)
+FRED_API_KEY = os.getenv("FRED_API_KEY")
+
 # EXTERNAL_DEPENDENCY: configure RWA_DATA_PROVIDER_URL with a real institutional feed.
 RWA_DATA_PROVIDER_URL = os.getenv("RWA_DATA_PROVIDER_URL")
 RWA_PROVIDER_API_KEY = os.getenv("RWA_PROVIDER_API_KEY")

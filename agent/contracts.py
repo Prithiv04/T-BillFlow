@@ -125,6 +125,31 @@ class RWAStateOracle(BaseContract):
     def is_approved_provider(self, provider: str) -> bool:
         return self.contract.functions.isApprovedProvider(provider).call()
 
+    def get_asset_feed(self, asset: str) -> str:
+        return self.contract.functions.getAssetFeed(Web3.to_checksum_address(asset)).call()
+
+    def sync_from_feed(self, asset: str, private_key: str) -> str:
+        """Trigger on-chain synchronization from configured price feed."""
+        acct = self.w3.eth.account.from_key(private_key)
+        nonce = self.w3.eth.get_transaction_count(acct.address)
+        base_fee = self.w3.eth.get_block("latest").get("baseFeePerGas", 0)
+        max_priority_fee = Web3.to_wei(0.1, "gwei")
+        max_fee = base_fee * 2 + max_priority_fee
+
+        tx = self.contract.functions.syncFromFeed(
+            Web3.to_checksum_address(asset)
+        ).build_transaction({
+            "from": acct.address,
+            "nonce": nonce,
+            "gas": 300_000,
+            "maxFeePerGas": max_fee,
+            "maxPriorityFeePerGas": max_priority_fee,
+            "type": 2,
+        })
+        signed = acct.sign_transaction(tx)
+        tx_hash = self.w3.eth.send_raw_transaction(signed.raw_transaction)
+        return tx_hash.hex()
+
 
 class TBillVault(BaseContract):
     def __init__(self, address: str, w3: Web3):

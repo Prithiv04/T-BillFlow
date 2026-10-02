@@ -28,6 +28,8 @@ interface IRWAStateOracle {
     event RedemptionStatusChanged(address indexed asset, bool open);
     event ProviderUpdated(address indexed provider, bool approved);
     event AttestationProcessed(bytes32 indexed attestationHash, address indexed provider, address indexed asset);
+    event AssetFeedConfigured(address indexed asset, address indexed feed);
+    event FeedSynchronized(address indexed asset, address indexed feed, uint256 nav, uint256 updatedAt);
 
     // -------------------------------------------------------
     // Errors
@@ -43,6 +45,9 @@ interface IRWAStateOracle {
     error StaleAttestationTimestamp();
     error AttestationAlreadyUsed();
     error InvalidAttestationSignature();
+    error NoFeedConfigured();
+    error InvalidOraclePrice();
+    error InvalidOracleTimestamp();
 
     // -------------------------------------------------------
     // Asset state struct & Attestation struct
@@ -92,6 +97,9 @@ interface IRWAStateOracle {
 
     function isApprovedProvider(address provider) external view returns (bool);
 
+    /// @notice Get the on-chain price feed configured for `asset`.
+    function getAssetFeed(address asset) external view returns (address);
+
     // -------------------------------------------------------
     // Admin / simulation write functions
     // -------------------------------------------------------
@@ -101,6 +109,12 @@ interface IRWAStateOracle {
 
     /// @notice Remove an asset from the oracle.
     function removeAsset(address asset) external;
+
+    /// @notice Bind an asset to an authoritative on-chain price feed (e.g. Chainlink / OpenEden aggregator).
+    function setAssetFeed(address asset, address feed) external;
+
+    /// @notice Pull latest round data from the configured on-chain feed and update NAV.
+    function syncFromFeed(address asset) external;
 
     /// @notice Update simulated NAV and redemption status.
     function updateAssetState(
