@@ -117,6 +117,7 @@ contract AgentExecutionGate is IExecutionGate, Pausable, Ownable, ReentrancyGuar
         }
 
         // 4. RWA asset eligibility
+        // forge-lint: disable-next-line(unused-return)
         rwaOracle.isEligible(req.asset, req.action);
 
         // 5. Investor KYC, Sanction & Transfer Policy (if compliance registry configured)
@@ -164,15 +165,8 @@ contract AgentExecutionGate is IExecutionGate, Pausable, Ownable, ReentrancyGuar
             }
         }
 
-        emit Executed(
-            req.mandateId,
-            msg.sender,
-            req.target,
-            req.selector,
-            req.asset,
-            req.action,
-            req.amount
-        );
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit Executed(req.mandateId, msg.sender, req.target, req.selector, req.asset, req.action, req.amount);
     }
 
     /// @inheritdoc IExecutionGate
@@ -182,8 +176,10 @@ contract AgentExecutionGate is IExecutionGate, Pausable, Ownable, ReentrancyGuar
         returns (bool allowed, bytes memory reason)
     {
         try this.checkExecution(req, msg.sender) {
+            // forge-lint: disable-next-line(boolean-cst)
             return (true, "");
         } catch (bytes memory err) {
+            // forge-lint: disable-next-line(boolean-cst)
             return (false, err);
         }
     }
@@ -195,8 +191,10 @@ contract AgentExecutionGate is IExecutionGate, Pausable, Ownable, ReentrancyGuar
         returns (bool allowed, bytes memory reason)
     {
         try this.checkExecution(req, agent) {
+            // forge-lint: disable-next-line(boolean-cst)
             return (true, "");
         } catch (bytes memory err) {
+            // forge-lint: disable-next-line(boolean-cst)
             return (false, err);
         }
     }

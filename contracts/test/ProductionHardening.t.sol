@@ -150,8 +150,8 @@ contract ProductionHardeningTest is Test {
 
     function test_eip712_attestationUpdate() public {
         uint256 nav = 1.025e18;
-        uint256 navTime = block.timestamp;
-        uint256 deadline = block.timestamp + 600;
+        uint256 navTime = vm.getBlockTimestamp();
+        uint256 deadline = vm.getBlockTimestamp() + 600;
         uint256 nonce = 1;
 
         IRWAStateOracle.RWAAttestation memory attestation = IRWAStateOracle.RWAAttestation({
@@ -192,8 +192,8 @@ contract ProductionHardeningTest is Test {
         bytes memory sig = abi.encodePacked(r, s, v);
 
         // Warp 1 second to advance from setup timestamp
-        vm.warp(block.timestamp + 10);
-        attestation.navTimestamp = block.timestamp;
+        vm.warp(vm.getBlockTimestamp() + 10);
+        attestation.navTimestamp = vm.getBlockTimestamp();
 
         // Recompute digest for new timestamp
         structHash = keccak256(
@@ -221,9 +221,9 @@ contract ProductionHardeningTest is Test {
 
     function test_attestation_replayBlocked() public {
         uint256 nav = 1.03e18;
-        vm.warp(block.timestamp + 10);
-        uint256 navTime = block.timestamp;
-        uint256 deadline = block.timestamp + 600;
+        vm.warp(vm.getBlockTimestamp() + 10);
+        uint256 navTime = vm.getBlockTimestamp();
+        uint256 deadline = vm.getBlockTimestamp() + 600;
 
         IRWAStateOracle.RWAAttestation memory attestation = IRWAStateOracle.RWAAttestation({
             asset: address(usdc),

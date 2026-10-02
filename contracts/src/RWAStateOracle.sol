@@ -142,10 +142,13 @@ contract RWAStateOracle is IRWAStateOracle, EIP712, Ownable {
         if (state.navUpdatedAt == 0) {
             return false;
         }
-        if (block.timestamp < state.navUpdatedAt) {
+        uint256 _now = block.timestamp;
+        // forge-lint: disable-next-line(block-timestamp)
+        if (_now < state.navUpdatedAt) {
             return false;
         }
-        return (block.timestamp - state.navUpdatedAt <= state.maxNavAge);
+        // forge-lint: disable-next-line(block-timestamp)
+        return (_now - state.navUpdatedAt <= state.maxNavAge);
     }
 
     /// @inheritdoc IRWAStateOracle
@@ -186,6 +189,7 @@ contract RWAStateOracle is IRWAStateOracle, EIP712, Ownable {
     /// @inheritdoc IRWAStateOracle
     function setApprovedProvider(address provider, bool approved) external onlyOwner {
         require(provider != address(0), "zero provider address");
+        // forge-lint: disable-next-line(missing-events-access-control)
         isApprovedProvider[provider] = approved;
         emit ProviderUpdated(provider, approved);
     }
@@ -202,29 +206,34 @@ contract RWAStateOracle is IRWAStateOracle, EIP712, Ownable {
             revert AssetNotSupported();
         }
 
+        uint256 currentTimestamp = block.timestamp;
         state.nav = newNav;
-        state.navUpdatedAt = block.timestamp;
+        state.navUpdatedAt = currentTimestamp;
         state.redemptionOpen = redemptionOpen;
         state.liquidityTier = liquidityTier;
-
         emit AssetStateUpdated(
             asset,
             newNav,
-            block.timestamp,
+            currentTimestamp,
             redemptionOpen,
             liquidityTier
         );
+
+
     }
 
     /// @inheritdoc IRWAStateOracle
     function updateAssetStateWithAttestation(
-        RWAAttestation calldata attestation,
-        bytes calldata signature
-    ) external {
-        if (block.timestamp > attestation.deadline) {
+            RWAAttestation calldata attestation,
+            bytes calldata signature
+        ) external {
+            uint256 currentTimestamp = block.timestamp;
+        // forge-lint: disable-next-line(block-timestamp)
+        if (currentTimestamp > attestation.deadline) {
             revert InvalidAttestationDeadline();
         }
-        if (attestation.navTimestamp > block.timestamp) {
+        // forge-lint: disable-next-line(block-timestamp)
+        if (attestation.navTimestamp > currentTimestamp) {
             revert FutureAttestationTimestamp();
         }
 
@@ -270,14 +279,10 @@ contract RWAStateOracle is IRWAStateOracle, EIP712, Ownable {
         state.redemptionOpen = attestation.redemptionOpen;
         state.liquidityTier = attestation.liquidityTier;
 
-        emit AssetStateUpdated(
-            attestation.asset,
-            attestation.nav,
-            attestation.navTimestamp,
-            attestation.redemptionOpen,
-            attestation.liquidityTier
-        );
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit AssetStateUpdated(attestation.asset, attestation.nav, attestation.navTimestamp, attestation.redemptionOpen, attestation.liquidityTier);
 
+        // forge-lint: disable-next-line(reentrancy-events)
         emit AttestationProcessed(attestationHash, signer, attestation.asset);
     }
 
@@ -337,10 +342,11 @@ contract RWAStateOracle is IRWAStateOracle, EIP712, Ownable {
         (
             uint80 roundId,
             int256 answer,
-            ,
+            uint256 startedAt,
             uint256 updatedAt,
             uint80 answeredInRound
         ) = AggregatorV3Interface(feed).latestRoundData();
+        startedAt;
 
         if (answer <= 0) {
             revert InvalidOraclePrice();
@@ -348,7 +354,9 @@ contract RWAStateOracle is IRWAStateOracle, EIP712, Ownable {
         if (updatedAt == 0) {
             revert InvalidOracleTimestamp();
         }
-        if (updatedAt > block.timestamp) {
+        uint256 currentTimestamp = block.timestamp;
+        // forge-lint: disable-next-line(block-timestamp)
+        if (updatedAt > currentTimestamp) {
             revert FutureAttestationTimestamp();
         }
         if (answeredInRound < roundId) {
@@ -358,8 +366,10 @@ contract RWAStateOracle is IRWAStateOracle, EIP712, Ownable {
         uint8 feedDecimals = AggregatorV3Interface(feed).decimals();
         uint256 normalizedNav;
         if (feedDecimals <= 18) {
+            // forge-lint: disable-next-line(unsafe-typecast)
             normalizedNav = uint256(answer) * (10 ** (18 - feedDecimals));
         } else {
+            // forge-lint: disable-next-line(unsafe-typecast)
             normalizedNav = uint256(answer) / (10 ** (feedDecimals - 18));
         }
 

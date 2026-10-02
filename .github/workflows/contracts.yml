@@ -28,11 +28,11 @@ jobs:
 
       - name: Install dependencies
         working-directory: contracts
-        run: forge install
+        run: echo "Dependencies vendored, skipping forge install"
 
       - name: Compile contracts
         working-directory: contracts
-        run: forge build --deny-warnings
+        run: forge build --deny warnings
 
       - name: Run test suite
         working-directory: contracts

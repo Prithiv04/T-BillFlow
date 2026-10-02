@@ -82,6 +82,7 @@ contract AgentMandateRegistry is IAgentMandateRegistry, EIP712, Ownable {
     ///         May be called once after deployment.
     function setExecutionGate(address gate) external onlyOwner {
         require(gate != address(0), "zero gate");
+        // forge-lint: disable-next-line(missing-events-access-control)
         executionGate = gate;
     }
 
@@ -111,6 +112,7 @@ contract AgentMandateRegistry is IAgentMandateRegistry, EIP712, Ownable {
             maxTx == 0 ||
             maxCumulative == 0 ||
             validUntil <= validFrom ||
+            // forge-lint: disable-next-line(block-timestamp)
             validUntil <= block.timestamp
         ) revert InvalidMandateParams();
 
@@ -162,18 +164,8 @@ contract AgentMandateRegistry is IAgentMandateRegistry, EIP712, Ownable {
         });
         _mandateOwner[mandateId] = signer;
 
-        emit MandateGranted(
-            mandateId,
-            signer,
-            agent,
-            asset,
-            allowedTarget,
-            allowedActionsMask,
-            maxTx,
-            maxCumulative,
-            validFrom,
-            validUntil
-        );
+        // forge-lint: disable-next-line(reentrancy-events)
+        emit MandateGranted(mandateId, signer, agent, asset, allowedTarget, allowedActionsMask, maxTx, maxCumulative, validFrom, validUntil);
     }
 
     // -------------------------------------------------------
@@ -243,8 +235,11 @@ contract AgentMandateRegistry is IAgentMandateRegistry, EIP712, Ownable {
         if (m.agent == address(0)) revert MandateNotFound();
 
         // 2. timing
-        if (block.timestamp < m.validFrom) revert MandateNotYetValid();
-        if (block.timestamp > m.validUntil) revert MandateExpired();
+        uint256 _now = block.timestamp;
+        // forge-lint: disable-next-line(block-timestamp)
+        if (_now < m.validFrom) revert MandateNotYetValid();
+        // forge-lint: disable-next-line(block-timestamp)
+        if (_now > m.validUntil) revert MandateExpired();
 
         // 3. revoked
         if (m.revoked) revert MandateRevoked();

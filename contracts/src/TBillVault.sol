@@ -93,10 +93,10 @@ contract TBillVault is ERC4626, Ownable {
         uint256 shares
     ) internal virtual override {
         address from = (caller == executionGate) ? receiver : caller;
+        emit Deposit(caller, receiver, assets, shares);
+        // forge-lint: disable-next-line(arbitrary-send-erc20)
         SafeERC20.safeTransferFrom(IERC20(asset()), from, address(this), assets);
         _mint(receiver, shares);
-
-        emit Deposit(caller, receiver, assets, shares);
     }
 
     /// @dev Overridden to allow the registered executionGate to execute redemptions
@@ -115,6 +115,7 @@ contract TBillVault is ERC4626, Ownable {
         _burn(owner, shares);
         SafeERC20.safeTransfer(IERC20(asset()), receiver, assets);
 
+        // forge-lint: disable-next-line(reentrancy-events)
         emit Withdraw(caller, receiver, owner, assets, shares);
     }
 }

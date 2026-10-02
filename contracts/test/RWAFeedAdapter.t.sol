@@ -155,13 +155,13 @@ contract RWAFeedAdapterTest is Test {
         assertTrue(oracle.isNavFresh(mockAsset));
 
         // Advance beyond maxNavAge (stale)
-        vm.warp(block.timestamp + MAX_NAV_AGE + 1);
+        vm.warp(vm.getBlockTimestamp() + MAX_NAV_AGE + 1);
         assertFalse(oracle.isNavFresh(mockAsset));
         vm.expectRevert(IRWAStateOracle.NavStale.selector);
         oracle.isEligible(mockAsset, Actions.DEPOSIT);
 
         // Update feed and resync
-        feed.setRoundData(2, 105300000, block.timestamp, 2); // new NAV $1.0530
+        feed.setRoundData(2, 105300000, vm.getBlockTimestamp(), 2); // new NAV $1.0530
         oracle.syncFromFeed(mockAsset);
 
         // Freshness restored
