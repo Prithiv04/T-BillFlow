@@ -48,6 +48,15 @@ def agent_with_mocks(monkeypatch):
     mock_w3.eth.account.from_key.return_value = mock_account
     monkeypatch.setattr("agent.agent._build_web3", lambda: mock_w3)
 
+    # Patch FRED API in test so tests control the yield returned
+    monkeypatch.setenv("FRED_API_KEY", "test_key")
+    import agent.config as cfg
+    cfg.FRED_API_KEY = "test_key"
+    monkeypatch.setattr(
+        "agent.agent.fetch_fred_treasury_yield",
+        lambda key, series_id="DTB4WK": float(os.getenv("CURRENT_YIELD", "6.5")),
+    )
+
     # Instantiate the agent – it will receive the mocked contracts
     agent = OffChainAgent()
     # Verify that the agent holds our mocks (sanity check)
@@ -164,3 +173,15 @@ def test_secrets_not_logged(monkeypatch, capsys):
     output = capsys.readouterr().out
     assert os.getenv("PRIVATE_KEY") not in output
     assert "PRIVATE_KEY" not in output
+
+def test_live_yield_unavailable_blocks_execution(agent_with_mocks, capsys):
+    agent, mock_gate, mock_oracle, _ = agent_with_mocks
+    import agent.config as cfg
+    cfg.FRED_API_KEY = ""  # simulate missing live FRED key in LIVE mode
+    mock_oracle.is_eligible.return_value = True
+
+    agent.run_once()
+    mock_gate.execute.assert_not_called()
+    output = capsys.readouterr().out
+    assert "LIVE YIELD UNAVAILABLE" in output
+

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Web3Provider } from "@/components/Web3Provider";
-import { ModeProvider } from "@/context/ModeContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,9 +20,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
         <Web3Provider>
-          <ModeProvider>
-            {children}
-          </ModeProvider>
+          {children}
         </Web3Provider>
       </body>
     </html>

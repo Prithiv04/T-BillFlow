@@ -11,9 +11,7 @@ import {
   Bot,
   History,
   ChevronRight,
-  Radio,
 } from 'lucide-react';
-import { useMode } from '@/context/ModeContext';
 
 const NAV_ITEMS = [
   { label: 'Overview', href: '/', icon: LayoutDashboard },
@@ -26,7 +24,6 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { toggleMode, isDemo } = useMode();
 
   return (
     <aside className="w-64 border-r border-[#1E2229] bg-[#0E1013] flex flex-col justify-between shrink-0 h-screen sticky top-0">
@@ -84,41 +81,15 @@ export function Sidebar() {
         </nav>
       </div>
 
-      {/* Footer / Mode & Network Controls */}
-      <div className="p-4 border-t border-[#1E2229] space-y-3 bg-[#0A0B0D]/50">
-        {/* Mode Selector Pill */}
-        <div className="p-2.5 rounded-lg border border-[#1E2229] bg-[#121418]">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-              <Radio className="h-3 w-3 text-gray-500" />
-              Runtime Mode
-            </span>
-            <span
-              className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-medium ${
-                isDemo
-                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                  : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-              }`}
-            >
-              {isDemo ? 'DEMO' : 'LIVE'}
-            </span>
-          </div>
-
-          <button
-            onClick={toggleMode}
-            className="w-full py-1.5 px-2 rounded text-[11px] font-medium bg-[#1A1D23] hover:bg-[#20242B] border border-[#2A303A] text-gray-300 transition-colors flex items-center justify-center gap-1.5"
-          >
-            <span>Switch to {isDemo ? 'Live Mode' : 'Demo Mode'}</span>
-          </button>
-        </div>
-
+      {/* Footer / Network Badge */}
+      <div className="p-4 border-t border-[#1E2229] space-y-2 bg-[#0A0B0D]/50">
         {/* Network Status Badge */}
-        <div className="flex items-center justify-between px-2 text-[11px] text-gray-500 font-mono">
+        <div className="flex items-center justify-between px-2 text-[11px] text-gray-400 font-mono">
           <div className="flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <span>Arbitrum Sepolia</span>
           </div>
-          <span className="text-[10px] text-gray-600">421614</span>
+          <span className="text-[10px] text-gray-500">421614</span>
         </div>
       </div>
     </aside>

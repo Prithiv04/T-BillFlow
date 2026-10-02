@@ -13,7 +13,6 @@ import { parseUnits } from "viem";
 import { useVault } from "@/hooks/useVault";
 import { usePublicClient } from "wagmi";
 import { AppShell } from "@/components/layout/AppShell";
-import { useMode } from "@/context/ModeContext";
 import { useTreasuryYield } from "@/hooks/useTreasuryYield";
 
 function DepositContent() {
@@ -21,7 +20,6 @@ function DepositContent() {
   const defaultTab = searchParams.get("tab") === "withdraw" ? "withdraw" : "deposit";
   const { deposit, redeem, approve, refetchAll } = useVault();
   const publicClient = usePublicClient();
-  const { isDemo } = useMode();
   const treasuryData = useTreasuryYield();
 
   const [amount, setAmount] = useState("");
@@ -29,7 +27,7 @@ function DepositContent() {
   const [txHash, setTxHash] = useState("");
 
   const shares = amount ? (parseFloat(amount) / SHARE_RATE).toFixed(6) : "0.000000";
-  const activeRate = isDemo ? 6.5 : treasuryData.yield;
+  const activeRate = treasuryData.yield;
   const yearlyYield = amount && activeRate !== null ? (parseFloat(amount) * activeRate / 100).toFixed(2) : null;
 
   const handleSubmit = async (tab: "deposit" | "withdraw") => {
@@ -109,7 +107,7 @@ function DepositContent() {
                 <span>Estimated Yield:</span>
                 <span className="text-emerald-400">
                   {yearlyYield !== null
-                    ? `~$${yearlyYield} / year (${activeRate?.toFixed(2)}% ${isDemo ? 'Synthetic' : '3M Treasury'})`
+                    ? `~$${yearlyYield} / year (${activeRate?.toFixed(2)}% 3M Treasury)`
                     : 'Unavailable'}
                 </span>
               </div>

@@ -16,7 +16,7 @@ import {
   MANDATE_REGISTRY_ADDRESS,
   TBILL_VAULT_ADDRESS,
   TBUSD_ADDRESS,
-  DEMO_MANDATE_ID,
+  DEFAULT_MANDATE_ID,
   ACTION_DEPOSIT,
   DEPOSIT_SELECTOR,
   EXPLORER_URL,
@@ -103,8 +103,8 @@ function decodeGateError(reason: `0x${string}` | Uint8Array): string {
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 export function useLiveGate(
-  mandateId: `0x${string}` = DEMO_MANDATE_ID,
-  amountWei: bigint = 250_000_000_000n, // 250,000 MockUSDC (6 decimals)
+  mandateId: `0x${string}` = DEFAULT_MANDATE_ID,
+  amountWei: bigint = 250_000_000_000n, // 250,000 tBUSD (6 decimals)
 ): LiveGateState {
   const { address } = useAccount();
   const [txStatus, setTxStatus]   = useState<TxStatus>('idle');
@@ -223,7 +223,7 @@ export function useLiveGate(
   let gateReason = 'Gate state unavailable';
 
   if (isZeroMandate) {
-    gateReason = 'No on-chain mandate configured — use Demo mode';
+    gateReason = 'No on-chain mandate configured — set NEXT_PUBLIC_MANDATE_ID';
   } else if (isSimulating) {
     gateReason = 'Querying on-chain gate...';
   } else if (canExecData !== undefined) {
@@ -236,7 +236,7 @@ export function useLiveGate(
       gateReason = 'Gate blocked execution';
     }
   } else if (!simAgent) {
-    gateReason = 'Connect wallet to simulate gate';
+    gateReason = 'Connect wallet to authorize gate query';
   } else {
     gateReason = 'Gate state unavailable';
   }

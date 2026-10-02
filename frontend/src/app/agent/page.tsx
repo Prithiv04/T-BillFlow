@@ -4,32 +4,18 @@ import React from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Bot, Terminal } from 'lucide-react';
 import { YIELD_THRESHOLD } from '@/config';
-import { mockYield, mockRwaState, mockMandate } from '@/mocks/data';
-import { useMode } from '@/context/ModeContext';
 import { useLiveGate } from '@/hooks/useLiveGate';
 import { useTreasuryYield } from '@/hooks/useTreasuryYield';
 import { useLiveRwaState } from '@/hooks/useLiveRwaState';
 import { useLiveMandate } from '@/hooks/useLiveMandate';
-import { DEMO_MANDATE_ID } from '@/lib/constants';
+import { DEFAULT_MANDATE_ID } from '@/lib/constants';
 import { formatUnits } from 'viem';
 
 export default function AgentPage() {
-  const { isDemo } = useMode();
   const { canExecute: canExecuteLive, gateReason } = useLiveGate();
   const treasuryData = useTreasuryYield();
   const liveRwa = useLiveRwaState();
-  const liveMandate = useLiveMandate(DEMO_MANDATE_ID);
-
-  // Demo: use mock data. Live: use live Treasury data.
-  const currentYield = isDemo ? mockYield : (treasuryData.yield ?? 0);
-  const isYieldOk = isDemo
-    ? currentYield >= YIELD_THRESHOLD
-    : treasuryData.yield !== null && treasuryData.yield >= YIELD_THRESHOLD;
-  const isRwaOk = isDemo
-    ? !mockRwaState.isStale && mockRwaState.redemptionOpen
-    : !liveRwa.isStale && liveRwa.redemptionOpen;
-  const isMandateOk = isDemo ? !mockMandate.revoked : !liveMandate.revoked && !!liveMandate.agent;
-  const isGateOk = isDemo ? (isYieldOk && isRwaOk && isMandateOk) : canExecuteLive;
+  const liveMandate = useLiveMandate(DEFAULT_MANDATE_ID);
 
   const nowSec = BigInt(Math.floor(Date.now() / 1000));
   const isLiveMandateValid =
@@ -37,48 +23,6 @@ export default function AgentPage() {
     liveMandate.validUntil > nowSec &&
     liveMandate.validFrom <= nowSec &&
     liveMandate.used < liveMandate.maxCumulative;
-
-  const demoLogs = [
-    {
-      time: '19:42:13 UTC',
-      title: 'Opportunity detected',
-      lines: [
-        `Synthetic Opportunity Yield: ${currentYield.toFixed(1)}%`,
-        `Configured Minimum Threshold: ${YIELD_THRESHOLD.toFixed(1)}%`,
-        `Yield Condition: ${isYieldOk ? 'PASS (Yield exceeds threshold)' : 'FAIL'}`,
-      ],
-    },
-    {
-      time: '19:42:14 UTC',
-      title: 'RWA Oracle Eligibility Check',
-      lines: [
-        `Asset: USTB (Simulated US Treasury)`,
-        `NAV Freshness: ${!mockRwaState.isStale ? 'PASS (Fresh)' : 'FAIL (Stale)'}`,
-        `Redemption Window: ${mockRwaState.redemptionOpen ? 'PASS (Open)' : 'FAIL (Closed)'}`,
-        `Liquidity Tier: Tier ${mockRwaState.liquidityTier} (Sufficient)`,
-      ],
-    },
-    {
-      time: '19:42:14 UTC',
-      title: 'Mandate Registry Authorization',
-      lines: [
-        `Agent Identity: ${mockMandate.agent} (Authorized)`,
-        `Allowed Action: ${mockMandate.allowedAction}`,
-        `Cumulative Cap Check: Used $${mockMandate.used.toLocaleString()} of $${mockMandate.maxCumulative.toLocaleString()}`,
-        `Mandate Validity: ${!mockMandate.revoked ? 'PASS (Active)' : 'FAIL (Revoked)'}`,
-      ],
-    },
-    {
-      time: '19:42:15 UTC',
-      title: 'AgentExecutionGate Decision',
-      lines: [
-        `canExecute() evaluation: ${isGateOk ? 'ALLOWED' : 'BLOCKED'}`,
-        isGateOk
-          ? 'Calldata forwarded to TBillVault: SUCCESS'
-          : 'Gate Reverted: Unauthorized or Ineligible',
-      ],
-    },
-  ];
 
   const liveLogs = [
     {
@@ -164,7 +108,7 @@ export default function AgentPage() {
     },
   ];
 
-  const logs = isDemo ? demoLogs : liveLogs;
+  const logs = liveLogs;
 
   return (
     <AppShell
@@ -199,7 +143,7 @@ export default function AgentPage() {
               <div className="p-2 rounded bg-[#0E1013] border border-[#1E2229]">
                 <span className="text-gray-500 block text-[10px] uppercase">Current Yield</span>
                 <span className="text-emerald-400 font-bold">
-                  {isDemo ? `${mockYield.toFixed(1)}% APY` : treasuryData.formattedYield}
+                  {treasuryData.formattedYield}
                 </span>
               </div>
             </div>

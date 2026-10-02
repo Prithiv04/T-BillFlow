@@ -69,42 +69,46 @@ class OffChainAgent:
     def _yield_ok(self) -> bool:
         """Evaluate whether current yield meets the configured threshold.
 
-        In LIVE mode: attempts to fetch the real 4-Week T-Bill rate from FRED
-        (DTB4WK series) when FRED_API_KEY is configured. Falls back to the
-        static CURRENT_YIELD env value with a WARNING if FRED is unavailable.
+        In LIVE mode: queries the real 4-Week T-Bill rate from FRED (DTB4WK series).
+        If FRED_API_KEY is missing or the external fetch fails, live yield is
+        UNAVAILABLE and execution is strictly BLOCKED. Live mode NEVER silently falls
+        back to static or mock data.
 
-        In MOCK mode: uses CURRENT_YIELD directly without any external call.
+        In MOCK mode (automated unit/security tests only):
+        uses config.CURRENT_YIELD directly without network calls.
         """
-        current_yield = config.CURRENT_YIELD
-        yield_source = "config (CURRENT_YIELD)"
-
-        if not config.MOCK_MODE and config.FRED_API_KEY:
-            fred_yield = fetch_fred_treasury_yield(
-                config.FRED_API_KEY, series_id="DTB4WK"
+        if config.MOCK_MODE:
+            current_yield = config.CURRENT_YIELD
+            ok = current_yield >= config.YIELD_THRESHOLD
+            logger.info(
+                "Mock yield check: %.2f%% [source: test config] vs threshold %.2f%% — %s",
+                current_yield,
+                config.YIELD_THRESHOLD,
+                "OK" if ok else "below threshold",
             )
-            if fred_yield is not None:
-                current_yield = fred_yield
-                yield_source = "FRED API (DTB4WK — live secondary market rate)"
-            else:
-                logger.warning(
-                    "FRED yield unavailable — falling back to static CURRENT_YIELD=%.2f%%. "
-                    "This is a configured value, NOT a live market rate. "
-                    "Set FRED_API_KEY for live yield evaluation.",
-                    config.CURRENT_YIELD,
-                )
-        elif not config.MOCK_MODE and not config.FRED_API_KEY:
-            logger.warning(
-                "FRED_API_KEY not configured — using static CURRENT_YIELD=%.2f%% for "
-                "yield evaluation. This is NOT a live market rate. "
-                "Set FRED_API_KEY in .env to enable real yield assessment.",
-                config.CURRENT_YIELD,
-            )
+            return ok
 
-        ok = current_yield >= config.YIELD_THRESHOLD
+        # LIVE MODE: A real live market rate is required.
+        if not config.FRED_API_KEY:
+            logger.error(
+                "LIVE YIELD UNAVAILABLE: FRED_API_KEY is not configured in .env. "
+                "The autonomous agent cannot make live execution decisions without real market data. "
+                "Execution BLOCKED."
+            )
+            return False
+
+        fred_yield = fetch_fred_treasury_yield(config.FRED_API_KEY, series_id="DTB4WK")
+        if fred_yield is None:
+            logger.error(
+                "LIVE YIELD FETCH FAILED: Could not retrieve current DTB4WK series from FRED API. "
+                "Execution BLOCKED — protocol will not execute on stale or fabricated yield."
+            )
+            return False
+
+        ok = fred_yield >= config.YIELD_THRESHOLD
         logger.info(
-            "Yield check: %.2f%% [source: %s] vs threshold %.2f%% — %s",
-            current_yield,
-            yield_source,
+            "Live Yield check: %.2f%% [source: FRED API DTB4WK] vs threshold %.2f%% — %s",
+            fred_yield,
             config.YIELD_THRESHOLD,
             "OK" if ok else "below threshold",
         )

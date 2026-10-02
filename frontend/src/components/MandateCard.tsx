@@ -1,113 +1,16 @@
 'use client';
 
 import React from 'react';
-import { mockMandate } from '@/mocks/data';
 import { FileCheck2, CheckCircle2, ShieldX, KeyRound, Loader2 } from 'lucide-react';
 import { ADDRESSES } from '@/config';
-import { useMode } from '@/context/ModeContext';
 import { useLiveMandate } from '@/hooks/useLiveMandate';
-import { DEMO_MANDATE_ID, EXPLORER_URL } from '@/lib/constants';
+import { DEFAULT_MANDATE_ID, EXPLORER_URL } from '@/lib/constants';
 import { formatUnits } from 'viem';
 
-// ─── Demo card (original, untouched) ─────────────────────────────────────────
-function DemoMandateCard() {
-  const percentUsed =
-    mockMandate.maxCumulative > 0
-      ? Math.min(100, (mockMandate.used / mockMandate.maxCumulative) * 100)
-      : 0;
+export function MandateCard() {
+  const mandate = useLiveMandate(DEFAULT_MANDATE_ID);
 
-  return (
-    <div className="panel p-5 flex flex-col justify-between">
-      <div>
-        <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#1E2229]">
-          <div className="flex items-center gap-2">
-            <FileCheck2 className="h-4 w-4 text-blue-400" />
-            <h2 className="text-sm font-semibold text-white tracking-tight">Agent Mandate Registry</h2>
-          </div>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400">
-            DEMO / SIMULATED
-          </span>
-        </div>
-
-        <div className="space-y-3 text-xs">
-          <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
-            <span className="text-gray-400">Designated Agent</span>
-            <span className="font-mono text-gray-200">{mockMandate.agent}</span>
-          </div>
-
-          <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
-            <span className="text-gray-400">Allowed Action</span>
-            <span className="font-mono font-medium text-emerald-400">{mockMandate.allowedAction}</span>
-          </div>
-
-          <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
-            <span className="text-gray-400">Per-Tx Limit</span>
-            <span className="font-mono text-white">${mockMandate.maxTx.toLocaleString()} tBUSD</span>
-          </div>
-
-          <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
-            <span className="text-gray-400">Cumulative Budget</span>
-            <span className="font-mono text-white">${mockMandate.maxCumulative.toLocaleString()} tBUSD</span>
-          </div>
-
-          {/* Budget Utilized Progress */}
-          <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229] space-y-1.5">
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-400">Budget Utilized:</span>
-              <span className="font-mono font-medium text-white">
-                ${mockMandate.used.toLocaleString()} ({percentUsed.toFixed(0)}%)
-              </span>
-            </div>
-            <div className="w-full bg-[#181B20] h-1.5 rounded-full overflow-hidden">
-              <div
-                className={`h-full transition-all duration-300 ${
-                  percentUsed >= 100
-                    ? 'bg-rose-500'
-                    : percentUsed > 75
-                    ? 'bg-amber-500'
-                    : 'bg-emerald-500'
-                }`}
-                style={{ width: `${percentUsed}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
-            <span className="text-gray-400">Mandate Status</span>
-            <span
-              className={`inline-flex items-center gap-1 font-mono text-[11px] px-2 py-0.5 rounded ${
-                !mockMandate.revoked
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                  : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-              }`}
-            >
-              {!mockMandate.revoked ? (
-                <><CheckCircle2 className="h-3 w-3" /> Active &amp; Valid</>
-              ) : (
-                <><ShieldX className="h-3 w-3" /> Revoked</>
-              )}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="pt-3 border-t border-[#1E2229] mt-3 flex items-center justify-between text-[11px] text-gray-500 font-mono">
-        <span className="flex items-center gap-1">
-          <KeyRound className="h-3 w-3 text-blue-400" /> EIP-712 Nonce: 0
-        </span>
-        <span className="truncate max-w-[140px] text-gray-400">
-          {ADDRESSES.registry.slice(0, 8)}...{ADDRESSES.registry.slice(-6)}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-// ─── Live card ────────────────────────────────────────────────────────────────
-function LiveMandateCard() {
-  const mandate = useLiveMandate(DEMO_MANDATE_ID);
-
-  const isZeroId = (DEMO_MANDATE_ID as string) === '0x0000000000000000000000000000000000000000000000000000000000000000';
+  const isZeroId = (DEFAULT_MANDATE_ID as string) === '0x0000000000000000000000000000000000000000000000000000000000000000';
 
   const fmtUSDC = (v: bigint) =>
     isZeroId ? 'Unavailable' : `$${Number(formatUnits(v, 6)).toLocaleString()} tBUSD`;
@@ -143,8 +46,7 @@ function LiveMandateCard() {
 
         {isZeroId ? (
           <div className="p-3 rounded bg-[#0E1013] border border-[#1E2229] text-xs text-gray-500 font-mono">
-            No on-chain mandate ID configured. Set <code>DEMO_MANDATE_ID</code> in constants.ts after
-            calling <code>grantMandate()</code> on the registry.
+            Set <code className="text-gray-300">NEXT_PUBLIC_MANDATE_ID</code> in <code className="text-gray-300">.env.local</code> to track a registered on-chain mandate.
           </div>
         ) : (
           <div className="space-y-3 text-xs">
@@ -154,17 +56,17 @@ function LiveMandateCard() {
             </div>
 
             <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
-              <span className="text-gray-400">Actions Mask</span>
+              <span className="text-gray-400">Allowed Action</span>
               <span className="font-mono font-medium text-emerald-400">
-                {mandate.allowedActionsMask === 1n
+                {mandate.isLoading
+                  ? '...'
+                  : mandate.allowedActionsMask === 1n
                   ? 'DEPOSIT'
                   : mandate.allowedActionsMask === 2n
                   ? 'REDEEM'
                   : mandate.allowedActionsMask === 3n
                   ? 'DEPOSIT | REDEEM'
-                  : mandate.isError
-                  ? 'Unavailable'
-                  : `0x${mandate.allowedActionsMask.toString(16)}`}
+                  : 'Unavailable'}
               </span>
             </div>
 
@@ -174,51 +76,42 @@ function LiveMandateCard() {
             </div>
 
             <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
-              <span className="text-gray-400">Cumulative Cap</span>
+              <span className="text-gray-400">Cumulative Budget</span>
               <span className="font-mono text-white">{fmtUSDC(mandate.maxCumulative)}</span>
             </div>
 
-            {/* Budget meter */}
-            {!mandate.isError && (
-              <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229] space-y-1.5">
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-400">Budget Used:</span>
-                  <span className="font-mono font-medium text-white">
-                    {fmtUSDC(mandate.used)} ({percentUsed.toFixed(1)}%)
-                  </span>
-                </div>
-                <div className="w-full bg-[#181B20] h-1.5 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-300 ${
-                      percentUsed >= 100
-                        ? 'bg-rose-500'
-                        : percentUsed > 75
-                        ? 'bg-amber-500'
-                        : 'bg-emerald-500'
-                    }`}
-                    style={{ width: `${percentUsed}%` }}
-                  />
-                </div>
+            <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229] space-y-1.5">
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-400">Budget Utilized:</span>
+                <span className="font-mono font-medium text-white">
+                  {mandate.isLoading ? '...' : `${fmtUSDC(mandate.used)} (${percentUsed.toFixed(0)}%)`}
+                </span>
               </div>
-            )}
+              <div className="h-1.5 w-full bg-[#181B20] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-500 rounded-full transition-all"
+                  style={{ width: `${percentUsed}%` }}
+                />
+              </div>
+            </div>
 
             <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
               <span className="text-gray-400">Status</span>
               <span
-                className={`inline-flex items-center gap-1 font-mono text-[11px] px-2 py-0.5 rounded ${
-                  mandate.isError
-                    ? 'text-gray-500 italic'
+                className={`inline-flex items-center gap-1.5 font-medium px-2 py-0.5 rounded text-[11px] font-mono ${
+                  mandate.isLoading
+                    ? 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
                     : isActive
                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                     : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                 }`}
               >
-                {mandate.isError ? (
-                  'Unavailable'
+                {mandate.isLoading ? (
+                  '...'
                 ) : isActive ? (
-                  <><CheckCircle2 className="h-3 w-3" /> Active &amp; Valid</>
+                  <><CheckCircle2 className="h-3 w-3" /> ACTIVE</>
                 ) : (
-                  <><ShieldX className="h-3 w-3" /> {mandate.revoked ? 'Revoked' : 'Expired'}</>
+                  <><ShieldX className="h-3 w-3" /> REVOKED / INACTIVE</>
                 )}
               </span>
             </div>
@@ -228,7 +121,8 @@ function LiveMandateCard() {
 
       <div className="pt-3 border-t border-[#1E2229] mt-3 flex items-center justify-between text-[11px] text-gray-500 font-mono">
         <span className="flex items-center gap-1">
-          <KeyRound className="h-3 w-3 text-blue-400" /> EIP-712 Nonce: {mandate.nonce.toString()}
+          <KeyRound className="h-3 w-3 text-blue-400" />
+          On-Chain Scoped Mandate
         </span>
         <a
           href={`${EXPLORER_URL}/address/${ADDRESSES.registry}`}
@@ -241,10 +135,4 @@ function LiveMandateCard() {
       </div>
     </div>
   );
-}
-
-// ─── Export — branches on mode ─────────────────────────────────────────────────
-export function MandateCard() {
-  const { isDemo } = useMode();
-  return isDemo ? <DemoMandateCard /> : <LiveMandateCard />;
 }

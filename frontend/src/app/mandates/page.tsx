@@ -3,51 +3,16 @@
 import React, { useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Plus, KeyRound, Copy, Check } from 'lucide-react';
-import { mockMandate } from '@/mocks/data';
 import { ADDRESSES } from '@/config';
-import { useMode } from '@/context/ModeContext';
 import { useLiveMandate } from '@/hooks/useLiveMandate';
-import { DEMO_MANDATE_ID } from '@/lib/constants';
+import { DEFAULT_MANDATE_ID } from '@/lib/constants';
 import { formatUnits } from 'viem';
 
 export default function MandatesPage() {
-  const { isDemo } = useMode();
-  const [selectedMandate, setSelectedMandate] = useState(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const liveMandate = useLiveMandate(DEMO_MANDATE_ID);
-
-  const demoMandates = [
-    {
-      id: '0x0000000000000000000000000000000000000000000000000000000000000001',
-      agent: mockMandate.agent,
-      asset: 'USTB',
-      actions: 'DEPOSIT',
-      maxTx: mockMandate.maxTx,
-      maxCumulative: mockMandate.maxCumulative,
-      used: mockMandate.used,
-      validFrom: '2026-03-20',
-      validUntil: '2026-10-23',
-      status: !mockMandate.revoked ? 'ACTIVE' : 'REVOKED',
-      nonce: 0,
-      target: ADDRESSES.vault,
-    },
-    {
-      id: '0x0000000000000000000000000000000000000000000000000000000000000002',
-      agent: '0x17...C821',
-      asset: 'USTB',
-      actions: 'REDEEM',
-      maxTx: 500000,
-      maxCumulative: 2000000,
-      used: 2000000,
-      validFrom: '2025-01-01',
-      validUntil: '2025-12-31',
-      status: 'EXPIRED',
-      nonce: 1,
-      target: ADDRESSES.vault,
-    },
-  ];
+  const liveMandate = useLiveMandate(DEFAULT_MANDATE_ID);
 
   const nowSec = BigInt(Math.floor(Date.now() / 1000));
   const isLiveActive =
@@ -77,37 +42,35 @@ export default function MandatesPage() {
       ? 'Unavailable'
       : `0x${liveMandate.allowedActionsMask.toString(16)}`;
 
-  const liveMandates = [
-    {
-      id: DEMO_MANDATE_ID,
-      agent: liveMandate.isLoading
-        ? '...'
-        : liveMandate.isError || !liveMandate.agent
-        ? 'Unavailable'
-        : liveMandate.agent,
-      asset: 'tBUSD (MockUSDC)',
-      actions: liveMandate.isLoading ? '...' : liveAction,
-      maxTx: liveMandate.isLoading ? 0 : Number(formatUnits(liveMandate.maxTx, 6)),
-      maxCumulative: liveMandate.isLoading ? 0 : Number(formatUnits(liveMandate.maxCumulative, 6)),
-      used: liveMandate.isLoading ? 0 : Number(formatUnits(liveMandate.used, 6)),
-      validFrom:
-        liveMandate.validFrom > 0n
-          ? new Date(Number(liveMandate.validFrom) * 1000).toISOString().split('T')[0]
-          : 'Unavailable',
-      validUntil:
-        liveMandate.validUntil > 0n
-          ? new Date(Number(liveMandate.validUntil) * 1000).toISOString().split('T')[0]
-          : 'Unavailable',
-      status: liveMandate.isLoading ? 'LOADING' : liveStatus,
-      nonce: Number(liveMandate.nonce),
-      target: liveMandate.allowedTarget || ADDRESSES.vault,
-    },
-  ];
+  const mandateEntry = {
+    id: DEFAULT_MANDATE_ID,
+    agent: liveMandate.isLoading
+      ? '...'
+      : liveMandate.isError || !liveMandate.agent
+      ? 'Unavailable'
+      : liveMandate.agent,
+    asset: 'tBUSD (MockUSDC)',
+    actions: liveMandate.isLoading ? '...' : liveAction,
+    maxTx: liveMandate.isLoading ? 0 : Number(formatUnits(liveMandate.maxTx, 6)),
+    maxCumulative: liveMandate.isLoading ? 0 : Number(formatUnits(liveMandate.maxCumulative, 6)),
+    used: liveMandate.isLoading ? 0 : Number(formatUnits(liveMandate.used, 6)),
+    validFrom:
+      liveMandate.validFrom > 0n
+        ? new Date(Number(liveMandate.validFrom) * 1000).toISOString().split('T')[0]
+        : 'Unavailable',
+    validUntil:
+      liveMandate.validUntil > 0n
+        ? new Date(Number(liveMandate.validUntil) * 1000).toISOString().split('T')[0]
+        : 'Unavailable',
+    status: liveMandate.isLoading ? 'LOADING' : liveStatus,
+    nonce: Number(liveMandate.nonce),
+    target: liveMandate.allowedTarget || ADDRESSES.vault,
+  };
 
-  const mandates = isDemo ? demoMandates : liveMandates;
-  const safeIdx = Math.min(selectedMandate, mandates.length - 1);
-  const m = mandates[safeIdx] || mandates[0];
-  const percentUsed = m.maxCumulative > 0 ? (m.used / m.maxCumulative) * 100 : 0;
+  const percentUsed =
+    mandateEntry.maxCumulative > 0
+      ? (mandateEntry.used / mandateEntry.maxCumulative) * 100
+      : 0;
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -153,41 +116,33 @@ export default function MandatesPage() {
                 </tr>
               </thead>
               <tbody>
-                {mandates.map((item, idx) => (
-                  <tr
-                    key={item.id}
-                    onClick={() => setSelectedMandate(idx)}
-                    className={`cursor-pointer ${
-                      selectedMandate === idx ? 'bg-[#181B20]' : ''
-                    }`}
-                  >
-                    <td className="font-mono text-gray-200">
-                      <div className="flex items-center gap-1.5">
-                        <KeyRound className="h-3.5 w-3.5 text-blue-400" />
-                        <span>{item.agent}</span>
-                      </div>
-                    </td>
-                    <td className="font-mono text-gray-300">{item.asset}</td>
-                    <td className="font-mono text-emerald-400">{item.actions}</td>
-                    <td className="font-mono text-white">${item.maxTx.toLocaleString()}</td>
-                    <td className="font-mono text-white">
-                      ${item.maxCumulative.toLocaleString()}
-                    </td>
-                    <td>
-                      <span
-                        className={`badge font-mono text-[10px] ${
-                          item.status === 'ACTIVE'
-                            ? 'badge-green'
-                            : item.status === 'EXPIRED'
-                            ? 'badge-neutral'
-                            : 'badge-red'
-                        }`}
-                      >
-                        {item.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                <tr className="bg-[#181B20]">
+                  <td className="font-mono text-gray-200">
+                    <div className="flex items-center gap-1.5">
+                      <KeyRound className="h-3.5 w-3.5 text-blue-400" />
+                      <span>{mandateEntry.agent}</span>
+                    </div>
+                  </td>
+                  <td className="font-mono text-gray-300">{mandateEntry.asset}</td>
+                  <td className="font-mono text-emerald-400">{mandateEntry.actions}</td>
+                  <td className="font-mono text-white">${mandateEntry.maxTx.toLocaleString()}</td>
+                  <td className="font-mono text-white">
+                    ${mandateEntry.maxCumulative.toLocaleString()}
+                  </td>
+                  <td>
+                    <span
+                      className={`badge font-mono text-[10px] ${
+                        mandateEntry.status === 'ACTIVE'
+                          ? 'badge-green'
+                          : mandateEntry.status === 'EXPIRED'
+                          ? 'badge-neutral'
+                          : 'badge-red'
+                      }`}
+                    >
+                      {mandateEntry.status}
+                    </span>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -201,29 +156,29 @@ export default function MandatesPage() {
                 Mandate Policy Inspector
               </h3>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#181B20] text-gray-400 border border-[#2A303A]">
-                Nonce: {m.nonce}
+                Nonce: {mandateEntry.nonce}
               </span>
             </div>
 
             <div className="space-y-2.5 text-xs font-mono">
               <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
                 <span className="text-gray-500 block text-[10px] uppercase">Designated Agent</span>
-                <span className="text-white text-xs">{m.agent}</span>
+                <span className="text-white text-xs">{mandateEntry.agent}</span>
               </div>
 
               <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
                 <span className="text-gray-500 block text-[10px] uppercase">Target Contract</span>
-                <span className="text-white text-xs">{m.target}</span>
+                <span className="text-white text-xs">{mandateEntry.target}</span>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="p-2 rounded bg-[#0E1013] border border-[#1E2229]">
                   <span className="text-gray-500 block text-[10px] uppercase">Per-Tx Cap</span>
-                  <span className="text-white">${m.maxTx.toLocaleString()}</span>
+                  <span className="text-white">${mandateEntry.maxTx.toLocaleString()}</span>
                 </div>
                 <div className="p-2 rounded bg-[#0E1013] border border-[#1E2229]">
                   <span className="text-gray-500 block text-[10px] uppercase">Allowed Action</span>
-                  <span className="text-emerald-400">{m.actions}</span>
+                  <span className="text-emerald-400">{mandateEntry.actions}</span>
                 </div>
               </div>
 
@@ -232,7 +187,7 @@ export default function MandatesPage() {
                 <div className="flex justify-between text-[11px]">
                   <span className="text-gray-400">Budget Usage:</span>
                   <span className="text-white">
-                    ${m.used.toLocaleString()} / ${m.maxCumulative.toLocaleString()} (
+                    ${mandateEntry.used.toLocaleString()} / ${mandateEntry.maxCumulative.toLocaleString()} (
                     {percentUsed.toFixed(0)}%)
                   </span>
                 </div>
@@ -253,7 +208,7 @@ export default function MandatesPage() {
               <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
                 <span className="text-gray-500 block text-[10px] uppercase">Validity Window</span>
                 <span className="text-gray-300">
-                  {m.validFrom} → {m.validUntil}
+                  {mandateEntry.validFrom} → {mandateEntry.validUntil}
                 </span>
               </div>
             </div>
@@ -262,7 +217,7 @@ export default function MandatesPage() {
           <div className="pt-3 border-t border-[#1E2229] mt-3 flex items-center justify-between text-[11px] font-mono text-gray-500">
             <span>EIP-712 Domain Verified</span>
             <button
-              onClick={() => handleCopy(m.id)}
+              onClick={() => handleCopy(mandateEntry.id)}
               className="text-blue-400 hover:underline flex items-center gap-1"
             >
               {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
@@ -295,7 +250,7 @@ export default function MandatesPage() {
                 <label className="text-gray-400 block mb-1">Agent Address</label>
                 <input
                   type="text"
-                  defaultValue="0xDeployer...Demo"
+                  placeholder="0x..."
                   className="w-full p-2 rounded bg-[#0E1013] border border-[#1E2229] text-white"
                 />
               </div>

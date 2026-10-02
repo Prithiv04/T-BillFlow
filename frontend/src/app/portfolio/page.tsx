@@ -2,17 +2,14 @@
 
 import React, { useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
-import { Wallet, ArrowDownRight, ArrowUpRight, TrendingUp, Building2, CheckCircle2, Loader2 } from 'lucide-react';
-import { useMode } from '@/context/ModeContext';
+import { Wallet, Building2, CheckCircle2, Loader2 } from 'lucide-react';
 import { useVault } from '@/hooks/useVault';
 import { formatUnits, parseUnits } from 'viem';
 import { usePublicClient } from 'wagmi';
 import { useTreasuryYield } from '@/hooks/useTreasuryYield';
 import { useLiveRwaState } from '@/hooks/useLiveRwaState';
-import { SHARE_RATE } from '@/lib/constants';
 
 export default function PortfolioPage() {
-  const { isDemo } = useMode();
   const {
     isConnected,
     shareBalance,
@@ -33,96 +30,82 @@ export default function PortfolioPage() {
   const [status, setStatus] = useState<'idle' | 'pending' | 'success'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // ── Derive values with strict separation ─────────────────────────────────────
-  let totalValueDisplay = '$1,284,320.00';
-  let vaultSharesDisplay = '1,281,000.00 T-BillFlow';
-  let availableCashDisplay = '$320,000 tBUSD';
-  let ustbNavDisplay = '$1.0002';
-  let ustbPositionValueDisplay = '$1,281,256';
-  let ustbSharesTableDisplay = '1,281,000';
-  let ustbEligibility = 'ELIGIBLE';
-  let tbusdPositionValueDisplay = '$320,000';
-  let tbusdSharesTableDisplay = '320,000';
+  // ── Derive on-chain values strictly (No mock seeds) ──────────────────────────
+  let totalValueDisplay = 'Unavailable';
+  let vaultSharesDisplay = 'Unavailable';
+  let availableCashDisplay = 'Unavailable';
+  let ustbNavDisplay = 'Unavailable';
+  let ustbPositionValueDisplay = 'Unavailable';
+  let ustbSharesTableDisplay = 'Unavailable';
+  let ustbEligibility = 'UNAVAILABLE';
+  let tbusdPositionValueDisplay = 'Unavailable';
+  let tbusdSharesTableDisplay = 'Unavailable';
 
-  if (!isDemo) {
-    if (!isConnected) {
+  if (!isConnected) {
+    totalValueDisplay = 'Unavailable';
+    vaultSharesDisplay = 'Unavailable';
+    availableCashDisplay = 'Unavailable';
+    ustbPositionValueDisplay = 'Unavailable';
+    ustbSharesTableDisplay = 'Unavailable';
+    tbusdPositionValueDisplay = 'Unavailable';
+    tbusdSharesTableDisplay = 'Unavailable';
+  } else if (isBalanceLoading || isPortfolioLoading) {
+    totalValueDisplay = '...';
+    vaultSharesDisplay = '...';
+    availableCashDisplay = '...';
+    ustbPositionValueDisplay = '...';
+    ustbSharesTableDisplay = '...';
+    tbusdPositionValueDisplay = '...';
+    tbusdSharesTableDisplay = '...';
+  } else {
+    if (portfolioAssets !== undefined) {
+      const val = Number(formatUnits(portfolioAssets, 18));
+      totalValueDisplay = `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      ustbPositionValueDisplay = `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    } else {
       totalValueDisplay = 'Unavailable';
-      vaultSharesDisplay = 'Unavailable';
-      availableCashDisplay = 'Unavailable';
       ustbPositionValueDisplay = 'Unavailable';
+    }
+
+    if (shareBalance !== undefined) {
+      const shares = Number(formatUnits(shareBalance, 18));
+      vaultSharesDisplay = `${shares.toLocaleString(undefined, { maximumFractionDigits: 4 })} T-BillFlow`;
+      ustbSharesTableDisplay = shares.toLocaleString(undefined, { maximumFractionDigits: 4 });
+    } else {
+      vaultSharesDisplay = 'Unavailable';
       ustbSharesTableDisplay = 'Unavailable';
+    }
+
+    if (tbusdBalance !== undefined) {
+      const cash = Number(formatUnits(tbusdBalance, 18));
+      availableCashDisplay = `$${cash.toLocaleString(undefined, { maximumFractionDigits: 2 })} tBUSD`;
+      tbusdPositionValueDisplay = `$${cash.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      tbusdSharesTableDisplay = cash.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    } else {
+      availableCashDisplay = 'Unavailable';
       tbusdPositionValueDisplay = 'Unavailable';
       tbusdSharesTableDisplay = 'Unavailable';
-    } else if (isBalanceLoading || isPortfolioLoading) {
-      totalValueDisplay = '...';
-      vaultSharesDisplay = '...';
-      availableCashDisplay = '...';
-      ustbPositionValueDisplay = '...';
-      ustbSharesTableDisplay = '...';
-      tbusdPositionValueDisplay = '...';
-      tbusdSharesTableDisplay = '...';
-    } else {
-      if (portfolioAssets !== undefined) {
-        const val = Number(formatUnits(portfolioAssets, 18));
-        totalValueDisplay = `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        ustbPositionValueDisplay = `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      } else {
-        totalValueDisplay = 'Unavailable';
-        ustbPositionValueDisplay = 'Unavailable';
-      }
-
-      if (shareBalance !== undefined) {
-        const shares = Number(formatUnits(shareBalance, 18));
-        vaultSharesDisplay = `${shares.toLocaleString(undefined, { maximumFractionDigits: 4 })} T-BillFlow`;
-        ustbSharesTableDisplay = shares.toLocaleString(undefined, { maximumFractionDigits: 4 });
-      } else {
-        vaultSharesDisplay = 'Unavailable';
-        ustbSharesTableDisplay = 'Unavailable';
-      }
-
-      if (tbusdBalance !== undefined) {
-        const cash = Number(formatUnits(tbusdBalance, 18));
-        availableCashDisplay = `$${cash.toLocaleString(undefined, { maximumFractionDigits: 2 })} tBUSD`;
-        tbusdPositionValueDisplay = `$${cash.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        tbusdSharesTableDisplay = cash.toLocaleString(undefined, { maximumFractionDigits: 2 });
-      } else {
-        availableCashDisplay = 'Unavailable';
-        tbusdPositionValueDisplay = 'Unavailable';
-        tbusdSharesTableDisplay = 'Unavailable';
-      }
     }
+  }
 
-    if (liveRwa.isError) {
-      ustbNavDisplay = 'Unavailable';
-      ustbEligibility = 'UNAVAILABLE';
-    } else if (liveRwa.isLoading) {
-      ustbNavDisplay = '...';
-      ustbEligibility = 'CHECKING';
-    } else {
-      ustbNavDisplay = `$${(Number(liveRwa.nav) / 1e18).toFixed(4)}`;
-      ustbEligibility =
-        !liveRwa.isStale && liveRwa.redemptionOpen && liveRwa.liquidityTier >= 1
-          ? 'ELIGIBLE'
-          : 'BLOCKED';
-    }
+  if (liveRwa.isError) {
+    ustbNavDisplay = 'Unavailable';
+    ustbEligibility = 'UNAVAILABLE';
+  } else if (liveRwa.isLoading) {
+    ustbNavDisplay = '...';
+    ustbEligibility = 'CHECKING';
+  } else {
+    ustbNavDisplay = `$${(Number(liveRwa.nav) / 1e18).toFixed(4)}`;
+    ustbEligibility =
+      !liveRwa.isStale && liveRwa.redemptionOpen && liveRwa.liquidityTier >= 1
+        ? 'ELIGIBLE'
+        : 'BLOCKED';
   }
 
   const handleAction = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || parseFloat(amount) <= 0) return;
     setErrorMsg(null);
-
-    if (isDemo) {
-      setStatus('pending');
-      setTimeout(() => {
-        setStatus('success');
-        setTimeout(() => {
-          setStatus('idle');
-          setAmount('');
-        }, 2000);
-      }, 800);
-      return;
-    }
 
     if (!isConnected) {
       setErrorMsg('Please connect your wallet first.');
@@ -168,7 +151,7 @@ export default function PortfolioPage() {
             {totalValueDisplay}
           </div>
           <div className="text-[10px] text-gray-500 font-mono mt-0.5">
-            {isDemo ? 'Mark-to-market NAV valuation' : isConnected ? 'ERC-4626 on-chain valuation' : 'Connect wallet to view position'}
+            {isConnected ? 'ERC-4626 on-chain valuation' : 'Connect wallet to view position'}
           </div>
         </div>
 
@@ -178,21 +161,19 @@ export default function PortfolioPage() {
             {vaultSharesDisplay}
           </div>
           <div className="text-[10px] text-gray-500 font-mono mt-0.5">
-            {isDemo ? 'ERC-4626 Share balance' : isConnected ? 'On-chain TBillVault balanceOf' : 'Connect wallet'}
+            {isConnected ? 'On-chain TBillVault balanceOf' : 'Connect wallet'}
           </div>
         </div>
 
         <div className="panel p-4">
           <div className="text-gray-400 text-xs mb-1">
-            {isDemo ? 'Current Yield (APY)' : '3M U.S. Treasury Yield'}
+            3M U.S. Treasury Yield
           </div>
           <div className="text-xl font-bold font-mono text-emerald-400">
             {treasuryData.formattedYield}
           </div>
           <div className="text-[10px] text-gray-500 font-mono mt-0.5">
-            {isDemo
-              ? 'US Treasury Bill benchmark (simulated)'
-              : treasuryData.observationDate
+            {treasuryData.observationDate
               ? `As of ${treasuryData.observationDate} · U.S. Treasury`
               : 'Daily Treasury Par Yield Curve Rates'}
           </div>
@@ -204,7 +185,7 @@ export default function PortfolioPage() {
             {availableCashDisplay}
           </div>
           <div className="text-[10px] text-gray-500 font-mono mt-0.5">
-            {isDemo ? 'Instant settlement reserve' : isConnected ? 'On-chain tBUSD balance' : 'Connect wallet'}
+            {isConnected ? 'On-chain tBUSD balance' : 'Connect wallet'}
           </div>
         </div>
       </div>
@@ -244,7 +225,7 @@ export default function PortfolioPage() {
                       <span>USTB</span>
                     </div>
                   </td>
-                  <td className="text-gray-400">{isDemo ? "US Treasury Bill (3M)" : "T-BillFlow Vault Shares (tBUSD/Testnet)"}</td>
+                  <td className="text-gray-400">T-BillFlow Vault Shares (tBUSD/Testnet)</td>
                   <td className="font-mono text-white">{ustbNavDisplay}</td>
                   <td className="font-mono text-white font-medium">
                     {ustbPositionValueDisplay}
@@ -355,9 +336,7 @@ export default function PortfolioPage() {
                 <div className="flex justify-between">
                   <span>Exchange Rate:</span>
                   <span className="text-white">
-                    {isDemo
-                      ? `1 USTB = ${SHARE_RATE.toFixed(4)} tBUSD`
-                      : liveRwa.isError
+                    {liveRwa.isError
                       ? 'Unavailable'
                       : `1 USTB = $${(Number(liveRwa.nav) / 1e18).toFixed(4)} tBUSD`}
                   </span>
@@ -400,9 +379,7 @@ export default function PortfolioPage() {
           </div>
 
           <div className="pt-3 border-t border-[#1E2229] text-[10px] text-gray-500 font-mono mt-4">
-            {isDemo
-              ? "Underlying RWA: 3-Month US Treasury Bills (Demo Simulation)"
-              : "Underlying: Simulated tBUSD — Testnet vault. Not real T-Bill custody."}
+            Underlying: Simulated tBUSD — Testnet vault. Not real T-Bill custody.
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
-import { mockRwaState, mockMandate, mockExecutionRequest } from '@/mocks/data';
+import { useLiveGate } from '@/hooks/useLiveGate';
+import { DEFAULT_MANDATE_ID } from '@/lib/constants';
 
 export interface ChecklistItem {
   key: string;
@@ -8,41 +9,32 @@ export interface ChecklistItem {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// useCanExecute — mirrors exactly what AgentExecutionGate.sol enforces:
-//   AUTHORIZATION (mandate checks) and ELIGIBILITY (RWA oracle checks).
+// useCanExecute — derives the gate checklist from the live on-chain
+//   canExecuteAs() call (via useLiveGate). Mirrors exactly what
+//   AgentExecutionGate.sol enforces:
+//     AUTHORIZATION (mandate checks) and ELIGIBILITY (RWA oracle checks).
 //
 // NOTE: Yield threshold is an OFF-CHAIN agent decision (the agent decides
 // whether to propose an action). It is NOT enforced by the on-chain gate and
-// must NOT appear in the gate checklist. The AI is autonomous; the authority
-// is not.
+// must NOT appear in the gate checklist.
 // ─────────────────────────────────────────────────────────────────────────────
 export function useCanExecute() {
-  // ── Authorization checks (AgentMandateRegistry.validateMandate) ──────────
-  const mandateValid  = !mockMandate.revoked;
-  const txLimitValid  = mockExecutionRequest.amount <= mockMandate.maxTx;
-  const cumulativeValid =
-    mockMandate.used + mockExecutionRequest.amount <= mockMandate.maxCumulative;
-  const agentAuthorized  = Boolean(mockMandate.agent);
-  const actionAllowed    = mockExecutionRequest.action === mockMandate.allowedAction;
-  const targetAllowed    = Boolean(mockExecutionRequest.target);
-  const selectorAllowed  = Boolean(mockExecutionRequest.selector);
+  const { canExecute, gateReason } = useLiveGate(DEFAULT_MANDATE_ID);
 
-  // ── Eligibility checks (RWAStateOracle.isEligible) ───────────────────────
-  const navFresh            = !mockRwaState.isStale;
-  const redemptionAllowed   = mockRwaState.redemptionOpen;
-  const liquidityTierAllowed = mockRwaState.liquidityTier >= 1;
+  // Derive individual check pass/fail from the gate reason string returned
+  // by canExecuteAs(). When canExecute is true every check passes.
+  const mandateValid      = canExecute || !gateReason.includes('Mandate');
+  const agentAuthorized   = canExecute || !gateReason.includes('CallerNotAgent');
+  const actionAllowed     = canExecute || !gateReason.includes('ActionNotAllowed');
+  const targetAllowed     = canExecute || !gateReason.includes('TargetNotAllowed');
+  const selectorAllowed   = canExecute || !gateReason.includes('SelectorNotAllowed');
+  const txLimitValid      = canExecute || !gateReason.includes('TxLimitExceeded');
+  const cumulativeValid   = canExecute || !gateReason.includes('CumulativeLimitExceeded');
+  const navFresh          = canExecute || !gateReason.includes('NavStale');
+  const redemptionAllowed = canExecute || !gateReason.includes('RedemptionClosed');
+  const liquidityTierAllowed = canExecute || !gateReason.includes('LiquidityTooLow');
 
-  const reasons: string[] = [];
-
-  // Authorization failures
-  if (!mandateValid)    reasons.push('Mandate revoked');
-  if (!txLimitValid)    reasons.push(`TxLimitExceeded (${mockExecutionRequest.amount.toLocaleString()} > ${mockMandate.maxTx.toLocaleString()})`);
-  if (!cumulativeValid) reasons.push(`CumulativeLimitExceeded (${(mockMandate.used + mockExecutionRequest.amount).toLocaleString()} > ${mockMandate.maxCumulative.toLocaleString()})`);
-
-  // Eligibility failures
-  if (!navFresh)             reasons.push('NavStale — Authorization ≠ Eligibility');
-  if (!redemptionAllowed)    reasons.push('RedemptionClosed');
-  if (!liquidityTierAllowed) reasons.push('LiquidityTooLow');
+  const reasons: string[] = gateReason && !canExecute ? [gateReason] : [];
 
   const checklist: ChecklistItem[] = [
     { key: 'mandate',      label: 'Mandate registered & active', passed: mandateValid },
@@ -57,8 +49,5 @@ export function useCanExecute() {
     { key: 'liquidity',    label: 'Liquidity tier ≥ 1',          passed: liquidityTierAllowed },
   ];
 
-  const canExecute = reasons.length === 0;
-
   return { canExecute, reasons, checklist };
 }
-

@@ -30,13 +30,14 @@ export const TBILLFLOW_TOKEN      = TBILL_SHARE_ADDRESS;
 export const TBUSD_TOKEN          = TBUSD_ADDRESS;
 export const BSCSCAN_BASE         = EXPLORER_URL;
 
-// ── Known demo mandate ID ────────────────────────────────────────────────────
+// ── Default mandate ID ────────────────────────────────────────────────────────
 // The deploy script grants a single mandate to the deployer address.
 // This is the deterministic mandateId derived from the deploy parameters.
 // Used by the live gate hook to construct ExecutionRequests.
-// If no mandate exists on-chain, live mode gracefully shows "Unavailable".
-export const DEMO_MANDATE_ID =
-  '0x2a8a21a89050bb2f5ca9e5e0591e84d6cd8516f26968d1e8421be0e2ddd28970' as const;
+// Configurable via NEXT_PUBLIC_MANDATE_ID env var.
+// If no mandate exists on-chain, the live gate gracefully shows "Unavailable".
+export const DEFAULT_MANDATE_ID = (process.env.NEXT_PUBLIC_MANDATE_ID ||
+  '0x2a8a21a89050bb2f5ca9e5e0591e84d6cd8516f26968d1e8421be0e2ddd28970') as `0x${string}`;
 
 // ── Action bitmask constants (mirrors Types.sol Actions library) ──────────────
 export const ACTION_DEPOSIT  = 1n;  // 1 << 0

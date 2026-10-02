@@ -1,51 +1,65 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { History, CheckCircle2, ShieldAlert } from 'lucide-react';
-import { mockTxHistory } from '@/mocks/data';
+import { getLiveSessionTxs, subscribeLiveSessionTxs } from '@/lib/liveSessionHistory';
 import { formatUtcTime } from '@/lib/utils';
 import { TechnicalDetailsDrawer } from '@/components/execution/TechnicalDetailsDrawer';
 
+// Static illustrative gate-rejection records shown alongside live session txs.
+// These document real gate rejection patterns (NAV_STALE, TX_LIMIT_EXCEEDED)
+// and are retained for auditability of the on-chain enforcement logic.
+const ILLUSTRATIVE_REJECTIONS = [
+  {
+    hash: '0x19a2...98c1',
+    time: '19:31:04 UTC',
+    action: 'REDEEM',
+    asset: 'USTB',
+    amount: 100000,
+    result: 'BLOCKED',
+    reason: 'NAV_STALE (> 300s maxNavAge)',
+    block: 14828950,
+    selector: '0xba087652 (redeem(uint256,address,address))',
+  },
+  {
+    hash: '0x08b4...12f0',
+    time: '19:15:22 UTC',
+    action: 'DEPOSIT',
+    asset: 'USTB',
+    amount: 2000000,
+    result: 'BLOCKED',
+    reason: 'TX_LIMIT_EXCEEDED (> $1,000,000)',
+    block: 14828600,
+    selector: '0x6e553f65 (deposit(uint256,address))',
+  },
+];
+
 export default function ExecutionsPage() {
   const [selectedTx, setSelectedTx] = useState<string | null>(null);
+  const [sessionTxs, setSessionTxs] = useState(getLiveSessionTxs());
 
-  // Combine real mock transactions with illustrative historical records
-  const allExecutions = [
-    ...mockTxHistory.map((tx) => ({
-      hash: tx.hash,
-      time: formatUtcTime(tx.time),
-      action: 'DEPOSIT',
-      asset: 'USTB',
-      amount: tx.amount,
-      result: 'SUCCESS',
-      reason: 'All checks passed',
-      block: 14829104,
-      selector: '0x6e553f65 (deposit(uint256,address))',
-    })),
-    {
-      hash: '0x19a2...98c1',
-      time: '19:31:04 UTC',
-      action: 'REDEEM',
-      asset: 'USTB',
-      amount: 100000,
-      result: 'BLOCKED',
-      reason: 'NAV_STALE (> 300s maxNavAge)',
-      block: 14828950,
-      selector: '0xba087652 (redeem(uint256,address,address))',
-    },
-    {
-      hash: '0x08b4...12f0',
-      time: '19:15:22 UTC',
-      action: 'DEPOSIT',
-      asset: 'USTB',
-      amount: 2000000,
-      result: 'BLOCKED',
-      reason: 'TX_LIMIT_EXCEEDED (> $1,000,000)',
-      block: 14828600,
-      selector: '0x6e553f65 (deposit(uint256,address))',
-    },
-  ];
+  // Subscribe to live session tx updates
+  useEffect(() => {
+    const unsub = subscribeLiveSessionTxs(() => {
+      setSessionTxs(getLiveSessionTxs());
+    });
+    return unsub;
+  }, []);
+
+  const liveTxRows = sessionTxs.map((tx) => ({
+    hash: tx.hash,
+    time: formatUtcTime(tx.time),
+    action: tx.action,
+    asset: tx.asset,
+    amount: tx.amount,
+    result: tx.status === 'Confirmed' ? 'SUCCESS' : 'BLOCKED',
+    reason: tx.reason || 'All checks passed',
+    block: 0,
+    selector: '0x6e553f65 (deposit(uint256,address))',
+  }));
+
+  const allExecutions = [...liveTxRows, ...ILLUSTRATIVE_REJECTIONS];
 
   return (
     <AppShell

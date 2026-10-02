@@ -2,20 +2,14 @@
 
 import React from 'react';
 import { ShieldCheck, ShieldAlert, CheckCircle2, XCircle, ArrowDown, FileText, Activity } from 'lucide-react';
-import { useCanExecute } from '@/hooks/useCanExecute';
-import { mockMandate, mockRwaState } from '@/mocks/data';
-
-import { useMode } from '@/context/ModeContext';
 import { useLiveGate } from '@/hooks/useLiveGate';
-import { DEMO_MANDATE_ID } from '@/lib/constants';
+import { DEFAULT_MANDATE_ID } from '@/lib/constants';
 
 export function AuthVsEligibilityVisualizer() {
-  const { isDemo } = useMode();
-  const { canExecute: canExecuteDemo, reasons: reasonsDemo } = useCanExecute();
-  const { canExecute: canExecuteLive, gateReason } = useLiveGate(DEMO_MANDATE_ID);
+  const { canExecute: canExecuteLive, gateReason } = useLiveGate(DEFAULT_MANDATE_ID);
 
-  const canExecute = isDemo ? canExecuteDemo : canExecuteLive;
-  const reasons = isDemo ? reasonsDemo : gateReason ? [gateReason] : ['Gate blocked'];
+  const canExecute = canExecuteLive;
+  const reasons = gateReason ? [gateReason] : ['Gate blocked'];
 
   const isAuthError = Boolean(
     gateReason && (
@@ -38,45 +32,52 @@ export function AuthVsEligibilityVisualizer() {
     )
   );
 
-  // Authorization checks (Demo mode evaluates mock data; Live mode reflects on-chain simulation)
-  const authChecks = isDemo
-    ? [
-        { label: 'Mandate Registered & Active', passed: !mockMandate.revoked },
-        { label: 'Designated Agent Identity', passed: Boolean(mockMandate.agent) },
-        { label: 'Action Permission (DEPOSIT)', passed: mockMandate.allowedAction === 'DEPOSIT' },
-        { label: 'Target Whitelist (TBillVault)', passed: true },
-        { label: 'Per-Transaction Limit (<$1M)', passed: true },
-        { label: 'Cumulative Limit (<$5M)', passed: mockMandate.used < mockMandate.maxCumulative },
-      ]
-    : [
-        { label: 'Mandate Registered & Active', passed: canExecuteLive || (!gateReason.includes('MandateNotFound') && !gateReason.includes('MandateRevoked') && !gateReason.includes('MandateExpired')) },
-        { label: 'Designated Agent Identity', passed: canExecuteLive || !gateReason.includes('CallerNotAgent') },
-        { label: 'Action & Target Whitelist', passed: canExecuteLive || (!gateReason.includes('ActionNotAllowed') && !gateReason.includes('TargetNotAllowed') && !gateReason.includes('SelectorNotAllowed')) },
-        { label: 'Per-Transaction Limit (<$1M)', passed: canExecuteLive || !gateReason.includes('TxLimitExceeded') },
-        { label: 'Cumulative Limit (<$5M)', passed: canExecuteLive || !gateReason.includes('CumulativeLimitExceeded') },
-      ];
+  // Authorization checks (reflects on-chain gate evaluation)
+  const authChecks = [
+    {
+      label: 'Mandate Registered & Active',
+      passed: canExecuteLive || (!gateReason.includes('MandateNotFound') && !gateReason.includes('MandateRevoked') && !gateReason.includes('MandateExpired')),
+    },
+    {
+      label: 'Designated Agent Identity',
+      passed: canExecuteLive || !gateReason.includes('CallerNotAgent'),
+    },
+    {
+      label: 'Action & Target Whitelist',
+      passed: canExecuteLive || (!gateReason.includes('ActionNotAllowed') && !gateReason.includes('TargetNotAllowed') && !gateReason.includes('SelectorNotAllowed')),
+    },
+    {
+      label: 'Per-Transaction Limit (<$1M)',
+      passed: canExecuteLive || !gateReason.includes('TxLimitExceeded'),
+    },
+    {
+      label: 'Cumulative Limit (<$5M)',
+      passed: canExecuteLive || !gateReason.includes('CumulativeLimitExceeded'),
+    },
+  ];
 
-  // RWA Eligibility checks (Demo mode evaluates mock data; Live mode reflects on-chain simulation)
-  const eligibilityChecks = isDemo
-    ? [
-        { label: 'Asset Supported in Oracle', passed: mockRwaState.supported },
-        { label: 'NAV Freshness (<300s maxNavAge)', passed: !mockRwaState.isStale },
-        { label: 'Redemption Window Status', passed: mockRwaState.redemptionOpen },
-        { label: 'Sufficient Liquidity Tier (>=1)', passed: mockRwaState.liquidityTier >= 1 },
-      ]
-    : [
-        { label: 'Asset Supported in Oracle', passed: canExecuteLive || !gateReason.includes('AssetNotSupported') },
-        { label: 'NAV Freshness (<300s maxNavAge)', passed: canExecuteLive || !gateReason.includes('NavStale') },
-        { label: 'Redemption Window Status', passed: canExecuteLive || !gateReason.includes('RedemptionClosed') },
-        { label: 'Sufficient Liquidity Tier (>=1)', passed: canExecuteLive || !gateReason.includes('LiquidityTooLow') },
-      ];
+  // RWA Eligibility checks (reflects on-chain oracle gate evaluation)
+  const eligibilityChecks = [
+    {
+      label: 'Asset Supported in Oracle',
+      passed: canExecuteLive || !gateReason.includes('AssetNotSupported'),
+    },
+    {
+      label: 'NAV Freshness (<300s maxNavAge)',
+      passed: canExecuteLive || !gateReason.includes('NavStale'),
+    },
+    {
+      label: 'Redemption Window Status',
+      passed: canExecuteLive || !gateReason.includes('RedemptionClosed'),
+    },
+    {
+      label: 'Sufficient Liquidity Tier (>=1)',
+      passed: canExecuteLive || !gateReason.includes('LiquidityTooLow'),
+    },
+  ];
 
-  const authPassed = isDemo
-    ? authChecks.every((c) => c.passed)
-    : canExecuteLive || !isAuthError;
-  const eligibilityPassed = isDemo
-    ? eligibilityChecks.every((c) => c.passed)
-    : canExecuteLive || !isEligibilityError;
+  const authPassed = canExecuteLive || !isAuthError;
+  const eligibilityPassed = canExecuteLive || !isEligibilityError;
 
   return (
     <div className="panel p-5">
