@@ -48,5 +48,3 @@ export const ACTION_WITHDRAW = 8n;  // 1 << 3
 // ── Deposit function selector: deposit(uint256,address) ──────────────────────
 export const DEPOSIT_SELECTOR = '0x6e553f65' as const;
 
-// ── Protocol constants ────────────────────────────────────────────────────────
-export const SHARE_RATE  = 1.0002; // 1 share ≈ 1.0002 tBUSD

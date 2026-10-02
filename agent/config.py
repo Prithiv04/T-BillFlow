@@ -87,9 +87,10 @@ CUSTODIAN_CLIENT_ID = os.getenv("CUSTODIAN_CLIENT_ID")
 YIELD_THRESHOLD = float(os.getenv("YIELD_THRESHOLD", "5.0"))   # percent
 POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "60"))          # seconds
 
-# Current opportunity yield (synthetic/configured value — NOT a live market price)
-# In production, replace this with a real data source via rwa_provider.py.
-CURRENT_YIELD = float(os.getenv("CURRENT_YIELD", "6.5"))       # percent
+# Test-only configured yield used strictly during unit tests (when MOCK_MODE is active).
+# Live agent execution NEVER uses this value — it strictly requires real live FRED market
+# data (DTB4WK series) and fails closed if FRED_API_KEY or the network feed is unavailable.
+CURRENT_YIELD = float(os.getenv("CURRENT_YIELD", "6.5"))       # percent (test-only)
 
 # ─── Startup validation ───────────────────────────────────────────────────────
 if not MOCK_MODE:

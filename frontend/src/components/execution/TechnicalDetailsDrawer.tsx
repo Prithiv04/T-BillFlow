@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Code2, ChevronDown, ChevronUp, Copy, Check, ExternalLink } from 'lucide-react';
 import { ADDRESSES, CHAIN_ID } from '@/config';
-import { BSCSCAN_BASE } from '@/lib/constants';
+import { BSCSCAN_BASE, DEFAULT_MANDATE_ID, TBILL_VAULT_ADDRESS } from '@/lib/constants';
 
 interface TechnicalDetailsProps {
   txHash?: string;
@@ -19,12 +19,12 @@ interface TechnicalDetailsProps {
 export function TechnicalDetailsDrawer({
   txHash = '',
   blockNumber,
-  mandateId = '0x2a8a21a89050bb2f5ca9e5e0591e84d6cd8516f26968d1e8421be0e2ddd28970',
-  target = ADDRESSES.vault,
+  mandateId = DEFAULT_MANDATE_ID,
+  target = TBILL_VAULT_ADDRESS,
   selector = '0x6e553f65 (deposit(uint256,address))',
-  asset = 'tBUSD (Simulated testnet stablecoin)',
+  asset = 'tBUSD (Testnet settlement reserve)',
   action = '1 (DEPOSIT — bitmask bit 0)',
-  amount = '250,000 tBUSD (250000000000000000000000)',
+  amount = '250,000 tBUSD',
 }: TechnicalDetailsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);

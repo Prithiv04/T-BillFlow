@@ -87,7 +87,7 @@ export function MainExecutionPanel({ onExecuted }: MainExecutionPanelProps) {
         {/* Live Request Preview */}
         <div className="p-3.5 rounded-lg bg-[#0E1013] border border-[#1E2229] mb-4">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
-            On-Chain Execution Request
+            On-Chain Execution Request (Fixed Gate Test Payload)
           </div>
           <div className="grid grid-cols-3 gap-2 text-xs">
             <div>
@@ -104,7 +104,7 @@ export function MainExecutionPanel({ onExecuted }: MainExecutionPanelProps) {
             </div>
           </div>
           <div className="mt-2 pt-2 border-t border-[#1E2229] text-[10px] font-mono text-gray-500">
-            Target: TBillVault · Selector: deposit(uint256,address)
+            Target: TBillVault · Selector: deposit(uint256,address) · Fixed Gate Verification Amount
           </div>
         </div>
 

@@ -3,10 +3,23 @@
 import React from 'react';
 import { ShieldCheck, ShieldAlert, CheckCircle2, XCircle, ArrowDown, FileText, Activity } from 'lucide-react';
 import { useLiveGate } from '@/hooks/useLiveGate';
+import { useLiveMandate } from '@/hooks/useLiveMandate';
 import { DEFAULT_MANDATE_ID } from '@/lib/constants';
+import { formatUnits } from 'viem';
 
 export function AuthVsEligibilityVisualizer() {
   const { canExecute: canExecuteLive, gateReason } = useLiveGate(DEFAULT_MANDATE_ID);
+  const mandate = useLiveMandate(DEFAULT_MANDATE_ID);
+
+  const formatLimit = (val: bigint) => {
+    if (!val || val === 0n) return '';
+    const decimals = val > 100_000_000_000_000n ? 18 : 6;
+    const num = Number(formatUnits(val, decimals));
+    return ` (<$${num >= 1_000_000 ? `${(num / 1_000_000).toFixed(0)}M` : num.toLocaleString()})`;
+  };
+
+  const txLimitSuffix = formatLimit(mandate.maxTx);
+  const cumLimitSuffix = formatLimit(mandate.maxCumulative);
 
   const canExecute = canExecuteLive;
   const reasons = gateReason ? [gateReason] : ['Gate blocked'];
@@ -47,11 +60,11 @@ export function AuthVsEligibilityVisualizer() {
       passed: canExecuteLive || (!gateReason.includes('ActionNotAllowed') && !gateReason.includes('TargetNotAllowed') && !gateReason.includes('SelectorNotAllowed')),
     },
     {
-      label: 'Per-Transaction Limit (<$1M)',
+      label: `Per-Transaction Limit${txLimitSuffix || ' (<$1M)'}`,
       passed: canExecuteLive || !gateReason.includes('TxLimitExceeded'),
     },
     {
-      label: 'Cumulative Limit (<$5M)',
+      label: `Cumulative Limit${cumLimitSuffix || ' (<$5M)'}`,
       passed: canExecuteLive || !gateReason.includes('CumulativeLimitExceeded'),
     },
   ];

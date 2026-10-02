@@ -255,7 +255,7 @@ export default function PortfolioPage() {
                     </div>
                   </td>
                   <td className="text-gray-400">Stable Settlement Reserve</td>
-                  <td className="font-mono text-white">$1.0000</td>
+                  <td className="font-mono text-white">$1.0000 <span className="text-[10px] text-gray-500 font-sans">(Pegged)</span></td>
                   <td className="font-mono text-white font-medium">
                     {tbusdPositionValueDisplay}
                   </td>
@@ -379,7 +379,7 @@ export default function PortfolioPage() {
           </div>
 
           <div className="pt-3 border-t border-[#1E2229] text-[10px] text-gray-500 font-mono mt-4">
-            Underlying: Simulated tBUSD — Testnet vault. Not real T-Bill custody.
+            Underlying: tBUSD (Arbitrum Sepolia Testnet settlement reserve) — Not real T-Bill custody.
           </div>
         </div>
       </div>

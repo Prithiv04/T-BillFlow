@@ -1,23 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ExternalLink, CheckCircle2, Loader2 } from "lucide-react";
-import { SHARE_RATE } from "@/lib/constants";
-import { Suspense } from "react";
-import { parseUnits } from "viem";
+import { parseUnits, formatUnits } from "viem";
 import { useVault } from "@/hooks/useVault";
-import { usePublicClient } from "wagmi";
+import { usePublicClient, useReadContract } from "wagmi";
 import { AppShell } from "@/components/layout/AppShell";
 import { useTreasuryYield } from "@/hooks/useTreasuryYield";
+import { TBILL_VAULT_ADDRESS } from "@/lib/constants";
+import { tbillVaultAbi } from "@/abis/tbillVaultAbi";
 
 function DepositContent() {
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get("tab") === "withdraw" ? "withdraw" : "deposit";
+  const [activeTab, setActiveTab] = useState<"deposit" | "withdraw">(defaultTab);
   const { deposit, redeem, approve, refetchAll } = useVault();
   const publicClient = usePublicClient();
   const treasuryData = useTreasuryYield();
@@ -26,7 +27,47 @@ function DepositContent() {
   const [status, setStatus] = useState<"idle" | "pending" | "success">("idle");
   const [txHash, setTxHash] = useState("");
 
-  const shares = amount ? (parseFloat(amount) / SHARE_RATE).toFixed(6) : "0.000000";
+  let parsedAmountBigInt = 0n;
+  try {
+    if (amount && !isNaN(Number(amount)) && Number(amount) > 0) {
+      parsedAmountBigInt = parseUnits(amount, 18);
+    }
+  } catch {
+    parsedAmountBigInt = 0n;
+  }
+
+  const { data: onChainShares, isLoading: isSharesLoading, isError: isSharesError } = useReadContract({
+    address: TBILL_VAULT_ADDRESS,
+    abi: tbillVaultAbi,
+    functionName: 'convertToShares',
+    args: [parsedAmountBigInt],
+    query: {
+      enabled: parsedAmountBigInt > 0n && activeTab === 'deposit',
+    },
+  });
+
+  const { data: onChainAssets, isLoading: isAssetsLoading, isError: isAssetsError } = useReadContract({
+    address: TBILL_VAULT_ADDRESS,
+    abi: tbillVaultAbi,
+    functionName: 'convertToAssets',
+    args: [parsedAmountBigInt],
+    query: {
+      enabled: parsedAmountBigInt > 0n && activeTab === 'withdraw',
+    },
+  });
+
+  const previewData = activeTab === "deposit" ? onChainShares : onChainAssets;
+  const isPreviewLoading = activeTab === "deposit" ? isSharesLoading : isAssetsLoading;
+  const isPreviewError = activeTab === "deposit" ? isSharesError : isAssetsError;
+
+  const shares = !amount || Number(amount) <= 0
+    ? "0.000000"
+    : isPreviewLoading
+    ? "..."
+    : isPreviewError || previewData === undefined
+    ? "Unavailable"
+    : Number(formatUnits(previewData, 18)).toFixed(6);
+
   const activeRate = treasuryData.yield;
   const yearlyYield = amount && activeRate !== null ? (parseFloat(amount) * activeRate / 100).toFixed(2) : null;
 
@@ -67,7 +108,7 @@ function DepositContent() {
         <span className="text-white font-semibold">autonomous agent execution only</span> — see the Operations page.
       </div>
 
-      <Tabs defaultValue={defaultTab} className="w-full">
+      <Tabs defaultValue={defaultTab} value={activeTab} onValueChange={(val) => setActiveTab(val as "deposit" | "withdraw")} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6 bg-[#0E1013] border border-[#1E2229]">
           <TabsTrigger value="deposit" className="text-xs">Deposit tBUSD</TabsTrigger>
           <TabsTrigger value="withdraw" className="text-xs">Redeem Shares</TabsTrigger>

@@ -74,15 +74,12 @@ export function useVault() {
   const { writeContractAsync: redeemAsync, isPending: isRedeemPending } = useWriteContract();
 
   const deposit = async (amount: bigint) => {
-    // Note: A real implementation would check allowance first
-    // Here we directly expose the deposit call for the component to use
+    // Allowance check performed before deposit
     return await depositAsync({
       address: TBILL_VAULT_ADDRESS,
       abi: tbillVaultAbi,
       functionName: 'deposit',
       args: [amount, address as `0x${string}`],
-      gas: 300000n,
-      gasPrice: 1000000000n, // 1 Gwei
     });
   };
 
@@ -92,8 +89,6 @@ export function useVault() {
       abi: erc20Abi,
       functionName: 'approve',
       args: [TBILL_VAULT_ADDRESS, amount],
-      gas: 100000n, // Less gas needed for approve
-      gasPrice: 1000000000n, // 1 Gwei
     });
   };
 
@@ -103,8 +98,6 @@ export function useVault() {
       abi: tbillVaultAbi,
       functionName: 'redeem',
       args: [shares, address as `0x${string}`, address as `0x${string}`],
-      gas: 300000n,
-      gasPrice: 1000000000n, // 1 Gwei
     });
   };
 
