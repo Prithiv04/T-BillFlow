@@ -170,8 +170,8 @@ export function useLiveGate(
         addLiveSessionTx({
           hash: txHash,
           action: 'DEPOSIT',
-          asset: 'USTB',
-          amount: 250000,
+          asset: TBUSD_ADDRESS.slice(0, 10) + '... (tBUSD)',
+          amount: Number(amountWei / 1_000_000n), // 6-decimal tBUSD units → human-readable
           status: 'Confirmed',
           time: Date.now(),
         });

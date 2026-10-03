@@ -4,7 +4,7 @@ import React from 'react';
 import { Database, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { ADDRESSES } from '@/config';
 import { useLiveRwaState } from '@/hooks/useLiveRwaState';
-import { EXPLORER_URL } from '@/lib/constants';
+import { EXPLORER_URL, TBUSD_ADDRESS } from '@/lib/constants';
 
 export function RwaStateCard() {
   const state = useLiveRwaState();
@@ -45,7 +45,7 @@ export function RwaStateCard() {
         <div className="space-y-3 text-xs">
           <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
             <span className="text-gray-400">Target Asset</span>
-            <span className="font-mono font-medium text-white">tBUSD (MockUSDC)</span>
+            <span className="font-mono font-medium text-white" title={TBUSD_ADDRESS}>{TBUSD_ADDRESS.slice(0, 12)}... (testnet reserve)</span>
           </div>
 
           <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">

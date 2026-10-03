@@ -7,8 +7,9 @@ const rpcUrl =
   "https://sepolia-rollup.arbitrum.io/rpc";
 
 // WalletConnect Project ID — configure via NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID.
-// When not configured, WalletConnect modal degrades gracefully while injected wallets work.
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "";
+// When not configured, a fallback placeholder prevents static build failure while injected wallets continue to work.
+const projectId =
+  process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "tbillflow-community-fallback";
 
 export const config = getDefaultConfig({
   appName: "T-BillFlow 2.0",

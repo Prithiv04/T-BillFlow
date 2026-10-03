@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Database, CheckCircle2, AlertTriangle, RefreshCw, Sliders, ShieldCheck } from 'lucide-react';
 import { useLiveRwaState } from '@/hooks/useLiveRwaState';
-import { RWA_ORACLE_ADDRESS, EXPLORER_URL } from '@/lib/constants';
+import { RWA_ORACLE_ADDRESS, TBUSD_ADDRESS, EXPLORER_URL } from '@/lib/constants';
 
 export default function RwaAssetsPage() {
   const liveRwa = useLiveRwaState();
@@ -84,7 +84,7 @@ export default function RwaAssetsPage() {
                   <td className="font-semibold text-white">
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                      <span>tBUSD (MockUSDC)</span>
+                      <span>{TBUSD_ADDRESS.slice(0, 12)}... (testnet reserve)</span>
                     </div>
                   </td>
                   <td className="font-mono text-white">{navPriceDisplay}</td>

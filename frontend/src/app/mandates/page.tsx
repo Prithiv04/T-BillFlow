@@ -5,7 +5,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { Plus, KeyRound, Copy, Check } from 'lucide-react';
 import { ADDRESSES } from '@/config';
 import { useLiveMandate } from '@/hooks/useLiveMandate';
-import { DEFAULT_MANDATE_ID } from '@/lib/constants';
+import { DEFAULT_MANDATE_ID, TBUSD_ADDRESS } from '@/lib/constants';
 import { formatUnits } from 'viem';
 
 export default function MandatesPage() {
@@ -49,7 +49,7 @@ export default function MandatesPage() {
       : liveMandate.isError || !liveMandate.agent
       ? 'Unavailable'
       : liveMandate.agent,
-    asset: 'tBUSD (MockUSDC)',
+    asset: TBUSD_ADDRESS + ' (testnet settlement reserve)',
     actions: liveMandate.isLoading ? '...' : liveAction,
     maxTx: liveMandate.isLoading ? 0 : Number(formatUnits(liveMandate.maxTx, 6)),
     maxCumulative: liveMandate.isLoading ? 0 : Number(formatUnits(liveMandate.maxCumulative, 6)),

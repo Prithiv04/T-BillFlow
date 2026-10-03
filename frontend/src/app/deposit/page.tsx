@@ -146,15 +146,15 @@ function DepositContent() {
               </div>
               <div className="flex justify-between">
                 <span>Estimated Yield:</span>
-                <span className="text-emerald-400">
+                <span className="text-gray-400">
                   {yearlyYield !== null
-                    ? `~$${yearlyYield} / year (${activeRate?.toFixed(2)}% 3M Treasury)`
+                    ? `Benchmark ref: ${activeRate?.toFixed(2)}% (3M U.S. Treasury — not guaranteed vault yield)`
                     : 'Unavailable'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Settlement Speed:</span>
-                <span className="text-gray-300">T+0 Instant</span>
+                <span>Settlement:</span>
+                <span className="text-gray-300">T+0 on-chain token settlement only</span>
               </div>
             </div>
 

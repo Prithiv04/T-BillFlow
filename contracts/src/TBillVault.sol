@@ -10,11 +10,16 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 // ============================================================
 //  TBillVault.sol — Phase 4 Implementation
 //
-//  Simulated tokenized T-Bill vault for testnet demonstration.
+//  ERC-4626 tokenized vault deployed on Arbitrum Sepolia.
 //  Built on OpenZeppelin ERC-4626 with:
 //   - Standard ERC-4626 deposit, mint, withdraw, and redeem flows
 //   - AgentExecutionGate integration for mediated execution
-//   - Simulated allocation action (Actions.ALLOCATE)
+//   - allocate() action (Actions.ALLOCATE)
+//
+//  NOTE: This vault holds tBUSD (testnet stablecoin) as the underlying
+//  asset and does NOT perform real Treasury purchase, settlement, or
+//  custody. Real T-Bill custody requires an off-chain institutional
+//  integration (Securitize, Ondo, Superstate, etc.) not implemented here.
 // ============================================================
 
 contract TBillVault is ERC4626, Ownable {
@@ -71,7 +76,15 @@ contract TBillVault is ERC4626, Ownable {
     // Protocol / Simulation Actions
     // -------------------------------------------------------
 
-    /// @notice Simulate capital allocation towards T-Bills (corresponds to Actions.ALLOCATE).
+    /// @notice Record an allocation intent towards T-Bills (corresponds to Actions.ALLOCATE).
+    /// @dev This function is an intentional placeholder for testnet use.
+    ///      It emits an event so execution history is observable on-chain,
+    ///      but performs NO real Treasury purchase, settlement, or custody.
+    ///      Real Treasury allocation requires external institutional custodian
+    ///      integration (e.g. Securitize, Ondo, Superstate, Chainlink PoR)
+    ///      and is outside the scope of this on-chain contract.
+    ///      TVL, share value, and all ERC-4626 accounting are derived solely
+    ///      from the tBUSD balance held by this contract — never from this function.
     function allocate(uint256 amount) external {
         require(
             msg.sender == owner() || msg.sender == executionGate,

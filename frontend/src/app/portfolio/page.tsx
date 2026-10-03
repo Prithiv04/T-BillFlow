@@ -197,7 +197,7 @@ export default function PortfolioPage() {
             <div className="flex items-center gap-2">
               <Building2 className="h-4 w-4 text-blue-400" />
               <h2 className="text-sm font-semibold text-white tracking-tight">
-                RWA Treasury Holdings
+                Vault Token Holdings
               </h2>
             </div>
             <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#181B20] text-gray-400 border border-[#2A303A]">
@@ -343,11 +343,11 @@ export default function PortfolioPage() {
                 </div>
                 <div className="flex justify-between">
                   <span>Protocol Fee:</span>
-                  <span className="text-emerald-400">0.00%</span>
+                  <span className="text-emerald-400">0.00% (No vault fee mechanism)</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Settlement:</span>
-                  <span className="text-gray-300">T+0 Instant</span>
+                  <span className="text-gray-300">T+0 token settlement (on-chain only — not real Treasury settlement)</span>
                 </div>
               </div>
 

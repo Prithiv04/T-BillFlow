@@ -8,7 +8,7 @@ import { useLiveGate } from '@/hooks/useLiveGate';
 import { useTreasuryYield } from '@/hooks/useTreasuryYield';
 import { useLiveRwaState } from '@/hooks/useLiveRwaState';
 import { useLiveMandate } from '@/hooks/useLiveMandate';
-import { DEFAULT_MANDATE_ID } from '@/lib/constants';
+import { DEFAULT_MANDATE_ID, TBUSD_ADDRESS } from '@/lib/constants';
 import { formatUnits } from 'viem';
 
 export default function AgentPage() {
@@ -44,7 +44,7 @@ export default function AgentPage() {
       time: 'Live Stream',
       title: 'RWA State Oracle Verification',
       lines: [
-        `Target Asset: tBUSD (MockUSDC)`,
+        `Target Asset: ${TBUSD_ADDRESS} (testnet settlement reserve)`,
         `NAV Freshness: ${
           liveRwa.isError
             ? 'Unavailable'
@@ -123,9 +123,8 @@ export default function AgentPage() {
               <Bot className="h-4 w-4 text-blue-400" />
               <h2 className="text-sm font-semibold text-white tracking-tight">Execution Agent #01</h2>
             </div>
-            <span className="badge badge-green font-mono text-[10px]">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              RUNNING
+            <span className="badge badge-neutral font-mono text-[10px]">
+              INDEPENDENT PROCESS
             </span>
           </div>
 
@@ -179,7 +178,7 @@ export default function AgentPage() {
                 Explainable Decision Log (agent/agent.py)
               </h2>
             </div>
-            <span className="text-[10px] font-mono text-gray-500">Live stdout stream</span>
+            <span className="text-[10px] font-mono text-gray-500">On-chain reads reconstructed as decision log</span>
           </div>
 
           <div className="space-y-3">
