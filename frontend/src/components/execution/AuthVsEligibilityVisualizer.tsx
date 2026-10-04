@@ -76,7 +76,7 @@ export function AuthVsEligibilityVisualizer() {
       passed: canExecuteLive || !gateReason.includes('AssetNotSupported'),
     },
     {
-      label: 'NAV Freshness (<300s maxNavAge)',
+      label: 'NAV Freshness (<86,400s maxNavAge)',
       passed: canExecuteLive || !gateReason.includes('NavStale'),
     },
     {

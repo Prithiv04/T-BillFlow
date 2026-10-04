@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { AppShell } from '@/components/layout/AppShell';
-import { Database, Sliders, ShieldCheck } from 'lucide-react';
+import { Database, Sliders, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { useLiveRwaState } from '@/hooks/useLiveRwaState';
 import { RWA_ORACLE_ADDRESS, TBUSD_ADDRESS, EXPLORER_URL } from '@/lib/constants';
 
@@ -50,6 +50,19 @@ export default function RwaAssetsPage() {
       title="RWA State Oracle"
       subtitle="Real-World Asset NAV Freshness, Redemption Gates & Liquidity Tiers"
     >
+      {/* Testnet & Provider Disclosure Banner */}
+      <div className="flex items-start gap-3 p-4 mb-6 rounded-lg bg-amber-500/10 border border-amber-500/25 text-xs text-amber-200">
+        <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <div className="font-semibold text-amber-300 font-mono text-[11px] uppercase tracking-wider">
+            Testnet Environment Disclosure · Provider Simulation
+          </div>
+          <p className="text-gray-300 leading-relaxed">
+            The current on-chain RWA state reflects testnet and provider-simulated data on Arbitrum Sepolia. RWA eligibility is enforced via RWAStateOracle. Direct production institutional provider integration is pending.
+          </p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* RWA Assets Table */}
         <div className="panel lg:col-span-2 p-5">
@@ -133,7 +146,7 @@ export default function RwaAssetsPage() {
               On-Chain Gate Invariant
             </h4>
             <p className="text-xs text-gray-400 leading-relaxed">
-              Before the <code className="text-gray-300">AgentExecutionGate</code> permits any autonomous execution request, it calls <code className="text-gray-300">RWAStateOracle.isEligible(asset, action)</code>. If the NAV is stale (&gt;300s), redemption is closed, or liquidity tier &lt; 1, execution strictly reverts.
+              Before the <code className="text-gray-300">AgentExecutionGate</code> permits any autonomous execution request, it calls <code className="text-gray-300">RWAStateOracle.isEligible(asset, action)</code>. RWA eligibility is enforced via RWAStateOracle. If the NAV is stale (&gt;{liveRwa.maxNavAge > 0n ? liveRwa.maxNavAge.toString() : '86400'}s on-chain threshold), redemption is closed, or liquidity tier &lt; 1, execution strictly reverts.
             </p>
           </div>
         </div>
@@ -173,7 +186,7 @@ export default function RwaAssetsPage() {
               <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229] space-y-1">
                 <span className="text-gray-500 block text-[10px] uppercase">Max NAV Age Threshold</span>
                 <span className="text-white text-[11px]">
-                  {liveRwa.isError ? 'Unavailable' : `${liveRwa.maxNavAge.toString()} seconds (${Number(liveRwa.maxNavAge) / 3600} hours)`}
+                  {liveRwa.isError ? 'Unavailable' : liveRwa.isLoading ? '...' : `${(liveRwa.maxNavAge || 86400n).toString()} seconds (${Number(liveRwa.maxNavAge || 86400n) / 3600} hours)`}
                 </span>
               </div>
 

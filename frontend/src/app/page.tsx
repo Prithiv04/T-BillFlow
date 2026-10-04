@@ -141,7 +141,7 @@ export default function OverviewPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="font-semibold text-emerald-400">ARBITRUM SEPOLIA PROTOCOL</span>
-          <span className="text-gray-400">— Connected to live on-chain protocol contracts. RWA eligibility verified via RWAStateOracle.</span>
+          <span className="text-gray-400">— Connected to live on-chain protocol contracts. RWA eligibility is enforced via RWAStateOracle.</span>
         </div>
         <div className="text-gray-500 font-mono shrink-0">Chain ID: 421614</div>
       </div>
