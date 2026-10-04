@@ -49,9 +49,10 @@ export default function VaultPage() {
       <div className="panel p-5">
         <h2 className="text-sm font-semibold text-white mb-3">Vault Information</h2>
         <p className="text-xs text-gray-400 leading-relaxed">
-          The TBillVault issues USTB shares representing pro-rata ownership of the underlying tokenized U.S. Treasury Bill portfolio.
-          Deposits and redemptions are gated by the RWA Eligibility Oracle and the Agent Execution Gate.
-          All on-chain operations are permissioned through EIP-712 mandates.
+          The TBillVault issues USTB testnet shares representing simulated tokenized Treasury exposure on Arbitrum Sepolia.
+          Agent-mediated deposits and redemptions are evaluated by the RWA eligibility oracle and Agent Execution Gate, while delegated agent authority is constrained through EIP-712 mandates.
+          Direct ERC-4626 vault interactions are not equivalent to gate-mediated agent operations.
+          Production Treasury custody and settlement integration is not yet connected.
         </p>
         <div className="mt-4">
           <a href="/portfolio" className="text-[#28A0F0] text-xs hover:underline font-mono">

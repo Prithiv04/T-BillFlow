@@ -136,7 +136,7 @@ export function AuthorizationEligibilityCard() {
             </li>
             <li>
               <span className="font-medium text-gray-200">NAV:</span>{' '}
-              {rwa.nav ? fmtBigInt(rwa.nav, 6) + ' tBUSD' : 'Unavailable'}
+              {rwa.nav ? fmtBigInt(rwa.nav, 18) + ' tBUSD' : 'Unavailable'}
             </li>
             <li>
               <span className="font-medium text-gray-200">NAV Updated:</span>{' '}
