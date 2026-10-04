@@ -5,8 +5,10 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IRWAStateOracle} from "./IRWAStateOracle.sol";
+import {IManualRWAProvider} from "./IManualRWAProvider.sol";
 import {Actions, ActionMask} from "./Types.sol";
 import {AggregatorV3Interface} from "./interfaces/AggregatorV3Interface.sol";
+// Import manual provider only once
 
 // ============================================================
 //  RWAStateOracle.sol — Production & Attestation Hardened
@@ -121,7 +123,27 @@ contract RWAStateOracle is IRWAStateOracle, EIP712, Ownable {
 
     /// @inheritdoc IRWAStateOracle
     function getAssetState(address asset) external view returns (AssetState memory) {
+        IManualRWAProvider provider = _manualProviders[asset];
+        if (address(provider) != address(0)) {
+            AssetState memory state;
+            state.nav = provider.nav();
+            state.navUpdatedAt = provider.navUpdatedAt();
+            state.redemptionOpen = provider.redemptionOpen();
+            state.liquidityTier = provider.liquidityTier();
+            state.riskTier = provider.riskTier();
+            state.supported = provider.supported();
+            state.maxNavAge = provider.maxNavAge();
+            return state;
+        }
         return _assetStates[asset];
+    }
+    /// @inheritdoc IRWAStateOracle
+    function getRiskTier(address asset) external view returns (uint8) {
+        AssetState storage state = _assetStates[asset];
+        if (!state.supported) {
+            revert AssetNotSupported();
+        }
+        return state.riskTier;
     }
 
     /// @inheritdoc IRWAStateOracle
@@ -211,12 +233,14 @@ contract RWAStateOracle is IRWAStateOracle, EIP712, Ownable {
         state.navUpdatedAt = currentTimestamp;
         state.redemptionOpen = redemptionOpen;
         state.liquidityTier = liquidityTier;
+        // riskTier remains unchanged
         emit AssetStateUpdated(
             asset,
             newNav,
             currentTimestamp,
             redemptionOpen,
-            liquidityTier
+            liquidityTier,
+            state.riskTier
         );
 
 
@@ -280,7 +304,7 @@ contract RWAStateOracle is IRWAStateOracle, EIP712, Ownable {
         state.liquidityTier = attestation.liquidityTier;
 
         // forge-lint: disable-next-line(reentrancy-events)
-        emit AssetStateUpdated(attestation.asset, attestation.nav, attestation.navTimestamp, attestation.redemptionOpen, attestation.liquidityTier);
+        emit AssetStateUpdated(attestation.asset, attestation.nav, attestation.navTimestamp, attestation.redemptionOpen, attestation.liquidityTier, state.riskTier);
 
         // forge-lint: disable-next-line(reentrancy-events)
         emit AttestationProcessed(attestationHash, signer, attestation.asset);
@@ -312,6 +336,15 @@ contract RWAStateOracle is IRWAStateOracle, EIP712, Ownable {
         state.maxNavAge = newMaxNavAge;
         emit AssetSupported(asset, newMaxNavAge);
     }
+    /// @notice Update risk tier for an asset
+    function setRiskTier(address asset, uint8 newRiskTier) external onlyAuthorizedUpdater {
+        AssetState storage state = _assetStates[asset];
+        if (!state.supported) {
+            revert AssetNotSupported();
+        }
+        state.riskTier = newRiskTier;
+        emit AssetStateUpdated(asset, state.nav, state.navUpdatedAt, state.redemptionOpen, state.liquidityTier, newRiskTier);
+    }
 
     /// @inheritdoc IRWAStateOracle
     function getAssetFeed(address asset) external view returns (address) {
@@ -326,6 +359,18 @@ contract RWAStateOracle is IRWAStateOracle, EIP712, Ownable {
         }
         _assetPriceFeeds[asset] = feed;
         emit AssetFeedConfigured(asset, feed);
+    }
+
+    // Manual provider support
+    mapping(address => IManualRWAProvider) private _manualProviders;
+
+    function setManualProvider(address asset, address provider) external onlyOwner {
+        require(_assetStates[asset].supported, "Asset not supported");
+        _manualProviders[asset] = IManualRWAProvider(provider);
+    }
+
+    function getManualProvider(address asset) external view returns (address) {
+        return address(_manualProviders[asset]);
     }
 
     /// @inheritdoc IRWAStateOracle
@@ -381,7 +426,8 @@ contract RWAStateOracle is IRWAStateOracle, EIP712, Ownable {
             normalizedNav,
             updatedAt,
             state.redemptionOpen,
-            state.liquidityTier
+            state.liquidityTier,
+            state.riskTier
         );
         emit FeedSynchronized(asset, feed, normalizedNav, updatedAt);
     }

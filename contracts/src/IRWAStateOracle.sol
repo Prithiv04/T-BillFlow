@@ -20,7 +20,8 @@ interface IRWAStateOracle {
         uint256 nav,
         uint256 navUpdatedAt,
         bool redemptionOpen,
-        uint8 liquidityTier
+        uint8 liquidityTier,
+        uint8 riskTier
     );
 
     event AssetSupported(address indexed asset, uint256 maxNavAge);
@@ -58,6 +59,7 @@ interface IRWAStateOracle {
         uint256 navUpdatedAt;   // Timestamp of last NAV update
         bool    redemptionOpen; // Whether redemptions are currently accepted
         uint8   liquidityTier;  // 0 = illiquid, 1 = low, 2 = medium, 3 = high
+        uint8   riskTier;       // Risk tier classification
         bool    supported;      // True if asset is known to the oracle
         uint256 maxNavAge;      // Maximum acceptable NAV staleness (seconds)
     }
@@ -88,6 +90,7 @@ interface IRWAStateOracle {
     // -------------------------------------------------------
 
     function getAssetState(address asset) external view returns (AssetState memory);
+    function getRiskTier(address asset) external view returns (uint8);
 
     function nav(address asset) external view returns (uint256);
 
