@@ -6,11 +6,9 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/", label: "Home" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/deposit", label: "Deposit" },
-  { href: "/portfolio", label: "Portfolio" },
-  { href: "/faq", label: "FAQ" },
+  { href: "/", label: "Overview" },
+  { href: "/mandates", label: "Mandates" },
+  { href: "/rwa", label: "RWA State" },
 ];
 
 export default function Navbar() {

@@ -1,7 +1,6 @@
 import { useReadContract, useWriteContract, useAccount } from 'wagmi';
 import { TBILL_VAULT_ADDRESS, TBUSD_ADDRESS } from '@/lib/constants';
 import { tbillVaultAbi } from '@/abis/tbillVaultAbi';
-const TOTAL_SUPPLY_FN = 'totalSupply' as const;
 import { erc20Abi } from '@/abis/erc20Abi';
 
 export function useVault() {

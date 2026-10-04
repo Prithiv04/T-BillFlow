@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Code2, ChevronDown, ChevronUp, Copy, Check, ExternalLink } from 'lucide-react';
 import { ADDRESSES, CHAIN_ID } from '@/config';
-import { BSCSCAN_BASE, DEFAULT_MANDATE_ID, TBILL_VAULT_ADDRESS } from '@/lib/constants';
+import { DEFAULT_MANDATE_ID, TBILL_VAULT_ADDRESS } from '@/lib/constants';
 
 interface TechnicalDetailsProps {
   txHash?: string;

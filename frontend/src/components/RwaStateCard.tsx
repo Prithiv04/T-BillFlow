@@ -1,13 +1,19 @@
 'use client';
 
-import React from 'react';
-import { Database, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import React, { useCallback, useMemo } from 'react';
+import { Copy, ExternalLink } from 'lucide-react';
 import { ADDRESSES } from '@/config';
 import { useLiveRwaState } from '@/hooks/useLiveRwaState';
-import { EXPLORER_URL, TBUSD_ADDRESS } from '@/lib/constants';
+import { EXPLORER_URL } from '@/lib/constants';
 
 export function RwaStateCard() {
   const state = useLiveRwaState();
+
+  const eligibility = useMemo(() => {
+    if (state.isError) return { label: 'UNKNOWN', color: '#FF4400', bg: 'rgba(255,68,0,0.1)', border: 'rgba(255,68,0,0.25)' };
+    if (!state.isStale && state.supported) return { label: 'ELIGIBLE', color: '#00E340', bg: 'rgba(0,227,64,0.1)', border: 'rgba(0,227,64,0.25)' };
+    return { label: 'BLOCKED', color: '#FFE103', bg: 'rgba(255,225,3,0.1)', border: 'rgba(255,225,3,0.25)' };
+  }, [state.isError, state.isStale, state.supported]);
 
   const isFresh = !state.isStale && state.supported;
 
@@ -16,120 +22,114 @@ export function RwaStateCard() {
     : state.isLoading
     ? '...'
     : state.supported
-    ? `$${(Number(state.nav) / 1e18).toFixed(4)}`
+    ? (Number(state.nav) / 1e18).toFixed(4)
     : 'Unavailable';
 
-  const navAgeDisplay = state.navUpdatedAt === 0n
-    ? 'Never'
-    : `${state.navAgeSeconds}s ago`;
+  const navAgeDisplay =
+    state.navUpdatedAt === 0n ? 'Never' : String(state.navAgeSeconds) + 's ago';
+
+  const copyAddress = useCallback(() => {
+    navigator.clipboard.writeText(ADDRESSES.oracle);
+  }, []);
 
   return (
-    <div className="panel p-5 flex flex-col justify-between">
-      <div>
-        <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#1E2229]">
-          <div className="flex items-center gap-2">
-            <Database className="h-4 w-4 text-amber-400 shrink-0" />
-            <div>
-              <h2 className="text-sm font-semibold text-white tracking-tight">RWA State Oracle · Testnet</h2>
-              <div className="text-[10px] text-gray-400 font-mono mt-0.5">On-chain oracle state</div>
-            </div>
+    <div className="bg-[#0A1428] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-5 shadow-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-sm font-semibold text-[#F5F7FA] tracking-tight">RWA ELIGIBILITY STATE</h2>
+          <p className="text-[11px] text-[#9AA8BD] font-mono">Real-time Oracle Verification</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-block w-2.5 h-2.5 rounded-full"
+            style={{ backgroundColor: eligibility.color }}
+          />
+          <span
+            className="text-xs font-mono font-medium px-2 py-0.5 rounded"
+            style={{ color: eligibility.color, backgroundColor: eligibility.bg, border: '1px solid ' + eligibility.border }}
+          >
+            {eligibility.label}
+          </span>
+        </div>
+      </div>
+
+      {/* Rows */}
+      <div className="grid gap-2.5 text-xs">
+        {/* NAV */}
+        <div className="flex justify-between items-center p-3 rounded-[10px] bg-[#0F1B32] border border-[rgba(255,255,255,0.06)]">
+          <div>
+            <span className="text-[#9AA8BD] block font-mono text-[11px]">Oracle NAV</span>
+            <span className="text-[10px] text-gray-500">Tokenized T-Bill Net Asset Value</span>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {state.isLoading && <Loader2 className="h-3 w-3 animate-spin text-gray-400" />}
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-              LIVE
+          <span className="font-mono font-bold text-sm text-[#F5F7FA]">{navDisplay}</span>
+        </div>
+
+        {/* Freshness */}
+        <div className="flex justify-between items-center p-3 rounded-[10px] bg-[#0F1B32] border border-[rgba(255,255,255,0.06)]">
+          <div>
+            <span className="text-[#9AA8BD] block font-mono text-[11px]">Heartbeat</span>
+            <span className="text-[10px] text-gray-500">Updated {navAgeDisplay}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className={isFresh ? 'w-2 h-2 rounded-full bg-[#00E340] animate-pulse' : (state.isError || state.isLoading) ? 'w-2 h-2 rounded-full bg-[#9AA8BD]' : 'w-2 h-2 rounded-full bg-[#FFE103]'} />
+            <span className="font-mono text-xs font-medium text-[#F5F7FA]">
+              {(state.isError || state.isLoading) ? 'Unavailable' : isFresh ? 'Fresh' : 'Stale'}
             </span>
           </div>
         </div>
 
-        <div className="space-y-3 text-xs">
-          <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
-            <span className="text-gray-400">Target Asset</span>
-            <span className="font-mono font-medium text-white" title={TBUSD_ADDRESS}>{TBUSD_ADDRESS.slice(0, 12)}... (testnet reserve)</span>
+        {/* Redemption */}
+        <div className="flex justify-between items-center p-3 rounded-[10px] bg-[#0F1B32] border border-[rgba(255,255,255,0.06)]">
+          <div>
+            <span className="text-[#9AA8BD] block font-mono text-[11px]">Redemption Window</span>
+            <span className="text-[10px] text-gray-500">On-chain liquidity access</span>
           </div>
+          <span className="font-mono font-semibold text-xs">
+            {state.isError
+              ? <span className="text-gray-400">Unavailable</span>
+              : state.redemptionOpen
+              ? <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">OPEN</span>
+              : <span className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">CLOSED</span>}
+          </span>
+        </div>
 
-          <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">Oracle NAV</span>
-              <span className={`font-mono font-medium ${state.isError ? 'text-gray-500 italic' : 'text-white'}`}>
-                {navDisplay}
-              </span>
-            </div>
-            <div className="text-[10px] text-gray-500 mt-1">
-              On-chain value supplied by the testnet RWA oracle
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
-            <span className="text-gray-400">NAV Age</span>
-            <span className="font-mono text-gray-300">{navAgeDisplay}</span>
-          </div>
-
-          <div className="flex items-center justify-between p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
-            <span className="text-gray-400">Freshness</span>
-            <span
-              className={`inline-flex items-center gap-1.5 font-medium px-2 py-0.5 rounded text-[11px] font-mono ${
-                state.isError || state.isLoading
-                  ? 'bg-gray-500/10 text-gray-500 border border-gray-500/20'
-                  : isFresh
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                  : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-              }`}
-            >
-              {state.isError || state.isLoading ? (
-                'Unavailable'
-              ) : isFresh ? (
-                <><CheckCircle2 className="h-3 w-3" /> Fresh</>
-              ) : (
-                <><AlertTriangle className="h-3 w-3" /> Stale</>
-              )}
+        {/* Grid */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="p-2.5 rounded-[10px] bg-[#0F1B32] border border-[rgba(255,255,255,0.06)]">
+            <span className="text-[#9AA8BD] block font-mono text-[10px] uppercase">Liquidity Tier</span>
+            <span className="font-mono font-bold text-xs text-[#F5F7FA] mt-1 block">
+              {state.isError ? 'Unavailable' : 'Tier ' + state.liquidityTier}
             </span>
           </div>
-
-          <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">Redemption Window</span>
-              <span
-                className={`px-2 py-0.5 rounded text-[11px] font-mono font-medium ${
-                  state.isError
-                    ? 'text-gray-500 italic'
-                    : state.redemptionOpen
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                    : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                }`}
-              >
-                {state.isError ? 'Unavailable' : state.redemptionOpen ? 'OPEN' : 'CLOSED'}
-              </span>
-            </div>
-            <div className="text-[10px] text-gray-500 mt-1">
-              Oracle-reported on-chain state
-            </div>
-          </div>
-
-          <div className="p-2.5 rounded bg-[#0E1013] border border-[#1E2229]">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">Liquidity Tier</span>
-              <span className="font-mono text-gray-300">
-                {state.isError ? 'Unavailable' : `Tier ${state.liquidityTier}`}
-              </span>
-            </div>
-            <div className="text-[10px] text-gray-500 mt-1">
-              Oracle-reported on-chain state
-            </div>
+          <div className="p-2.5 rounded-[10px] bg-[#0F1B32] border border-[rgba(255,255,255,0.06)]">
+            <span className="text-[#9AA8BD] block font-mono text-[10px] uppercase">Asset Support</span>
+            <span className="font-mono font-bold text-xs mt-1 block">
+              {state.isError
+                ? <span className="text-gray-400">Unavailable</span>
+                : state.supported
+                ? <span className="text-emerald-400">Whitelisted</span>
+                : <span className="text-rose-400">Not Supported</span>}
+            </span>
           </div>
         </div>
       </div>
 
-      <div className="pt-3 border-t border-[#1E2229] mt-3 flex items-center justify-between text-[11px] text-gray-500 font-mono">
-        <span>RWAStateOracle · Arbitrum Sepolia</span>
-        <a
-          href={`${EXPLORER_URL}/address/${ADDRESSES.oracle}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-400 hover:underline truncate max-w-[140px]"
-        >
-          {ADDRESSES.oracle.slice(0, 8)}...{ADDRESSES.oracle.slice(-6)}
-        </a>
+      {/* Footer */}
+      <div className="mt-4 pt-3 border-t border-[rgba(255,255,255,0.08)] flex items-center justify-between text-[11px] text-[#9AA8BD] font-mono">
+        <span className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+          RWA State Oracle
+        </span>
+        <div className="flex items-center gap-2">
+          <span>{ADDRESSES.oracle.slice(0, 6)}...{ADDRESSES.oracle.slice(-4)}</span>
+          <button onClick={copyAddress} className="p-1 rounded hover:bg-[#0F1B32] text-gray-400 hover:text-white" title="Copy Oracle Address">
+            <Copy className="h-3 w-3" />
+          </button>
+          <a href={EXPLORER_URL + '/address/' + ADDRESSES.oracle} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline" title="View on Arbiscan">
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
-import { Settings, Copy, Check, ExternalLink, ShieldCheck } from 'lucide-react';
+import { Settings, Copy, Check, ShieldCheck } from 'lucide-react';
 import { ADDRESSES, CHAIN_ID } from '@/config';
 import { EXPLORER_URL, RPC_URL } from '@/lib/constants';
 

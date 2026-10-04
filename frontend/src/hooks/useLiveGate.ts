@@ -181,7 +181,7 @@ export function useLiveGate(
       setTxStatus('failed');
       setTxError('Transaction reverted on-chain');
     }
-  }, [txStatus, isReceiptSuccess, isReceiptError, txHash]);
+  }, [txStatus, isReceiptSuccess, isReceiptError, txHash, amountWei]);
 
   // ── 5. executeDeposit ────────────────────────────────────────────────────
   const executeDeposit = useCallback(async (depositAmount: bigint) => {

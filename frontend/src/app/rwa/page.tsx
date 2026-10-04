@@ -1,16 +1,14 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import { AppShell } from '@/components/layout/AppShell';
-import { Database, CheckCircle2, AlertTriangle, RefreshCw, Sliders, ShieldCheck } from 'lucide-react';
+import { Database, Sliders, ShieldCheck } from 'lucide-react';
 import { useLiveRwaState } from '@/hooks/useLiveRwaState';
 import { RWA_ORACLE_ADDRESS, TBUSD_ADDRESS, EXPLORER_URL } from '@/lib/constants';
 
 export default function RwaAssetsPage() {
   const liveRwa = useLiveRwaState();
-  const [, setTick] = useState(0);
 
-  const refresh = () => setTick((t) => t + 1);
 
   const isLiveEligible = !liveRwa.isStale && liveRwa.redemptionOpen && liveRwa.liquidityTier >= 1;
 

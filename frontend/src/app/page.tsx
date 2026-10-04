@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { MainExecutionPanel } from '@/components/execution/MainExecutionPanel';
-import { AuthVsEligibilityVisualizer } from '@/components/execution/AuthVsEligibilityVisualizer';
+import { AuthorizationEligibilityCard } from '@/components/AuthorizationEligibilityCard';
 import { TechnicalDetailsDrawer } from '@/components/execution/TechnicalDetailsDrawer';
 import { RwaStateCard } from '@/components/RwaStateCard';
 import { MandateCard } from '@/components/MandateCard';
@@ -157,7 +157,7 @@ export default function OverviewPage() {
 
       {/* 4. Dedicated Core Visualizer: Authorization != Eligibility */}
       <div className="mb-6">
-        <AuthVsEligibilityVisualizer />
+        <AuthorizationEligibilityCard />
       </div>
 
       {/* 5. Execution Operations Log */}

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
-import { Wallet, Building2, CheckCircle2, Loader2 } from 'lucide-react';
+import { Building2, CheckCircle2, Loader2 } from 'lucide-react';
 import { useVault } from '@/hooks/useVault';
 import { formatUnits, parseUnits } from 'viem';
 import { usePublicClient } from 'wagmi';
@@ -131,9 +131,9 @@ export default function PortfolioPage() {
         setStatus('idle');
         setAmount('');
       }, 2500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Portfolio transaction failed:', err);
-      setErrorMsg(err?.shortMessage || err?.message || 'Transaction failed');
+      setErrorMsg((err as Error)?.message || 'Transaction failed');
       setStatus('idle');
     }
   };
