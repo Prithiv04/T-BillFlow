@@ -15,13 +15,8 @@ export function Header({ title, subtitle }: HeaderProps) {
   const { isConnected } = useAccount();
   const { isCorrectNetwork } = useNetworkGuard();
   const { disconnect } = useDisconnect();
-  const [mounted, setMounted] = React.useState(false);
 
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const showNetworkWarning = mounted && isConnected && !isCorrectNetwork;
+  const showNetworkWarning = isConnected && !isCorrectNetwork;
 
   const handleDisconnect = () => {
     try {
@@ -91,7 +86,7 @@ export function Header({ title, subtitle }: HeaderProps) {
             />
           </div>
 
-          {mounted && isConnected && (
+          {isConnected && (
             <>
               <button
                 type="button"
