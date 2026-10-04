@@ -25,7 +25,7 @@ remappings = [
 #  - unused-return: isEligible() reverts on failure; return value not needed
 
 [rpc_endpoints]
-arbitrum_sepolia = "${ARBITRUM_SEPOLIA_RPC_URL}"
+arbitrum_sepolia = "${QUICKNODE_SEPOLIA_RPC_URL}"
 
 [etherscan]
 arbitrum_sepolia = { key = "${ARBISCAN_API_KEY}", url = "https://api.sepolia.arbiscan.io/api" }

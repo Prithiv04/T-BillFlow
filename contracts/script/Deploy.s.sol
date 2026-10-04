@@ -9,6 +9,7 @@ import {RWAStateOracle} from "../src/RWAStateOracle.sol";
 import {AgentExecutionGate} from "../src/AgentExecutionGate.sol";
 import {TBillVault} from "../src/TBillVault.sol";
 import {MockUSDC} from "./DeployTestToken.s.sol";
+import {ManualRWAProvider} from "../src/ManualRWAProvider.sol";
 
 // ============================================================
 //  Deploy.s.sol — Master Arbitrum Sepolia Deployment Script
@@ -100,6 +101,24 @@ contract DeployScript is Script {
 
         // 7. Initial Oracle Configuration
         oracle.addAsset(testTokenAddr, 1 days);
+
+        // Deploy ManualRWAProvider for the test token asset
+        ManualRWAProvider manualProvider = new ManualRWAProvider(deployer);
+        console2.log("ManualRWAProvider deployed at:", address(manualProvider));
+        // Register manual provider in the oracle
+        oracle.setManualProvider(testTokenAddr, address(manualProvider));
+        // Initialize provider state (example values)
+        uint256 exampleNav = 1e18; // $1.00 NAV with 18 decimals
+        uint256 nowTimestamp = block.timestamp;
+        manualProvider.setState(
+            exampleNav,
+            nowTimestamp,
+            true, // redemptionOpen
+            3,    // liquidityTier
+            0,    // riskTier
+            true, // supported
+            1 days // maxNavAge
+        );
         oracle.updateAssetState(testTokenAddr, 1e18, true, 3);
         console2.log("-> Oracle configured with asset, $1.00 NAV, open redemption, tier 3");
 
