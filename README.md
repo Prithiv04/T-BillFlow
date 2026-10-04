@@ -96,32 +96,32 @@ T-BillFlow separates responsibilities into four core smart contracts deployed on
 
 ```mermaid
 flowchart TD
-    subgraph Off-Chain Environment
-        User[Protocol Owner / User]
-        Agent[Autonomous Rule-Based Agent]
-        FRED[Federal Reserve FRED API<br/>DTB4WK Benchmark Rate]
-        Custody[Institutional Attestation Feed<br/>(External Dependency)]
+    subgraph OffChain ["Off-Chain Environment"]
+        User["Protocol Owner / User"]
+        Agent["Autonomous Rule-Based Agent"]
+        FRED["Federal Reserve FRED API<br/>DTB4WK Benchmark Rate"]
+        Custody["Institutional Attestation Feed<br/>(External Dependency)"]
     end
 
-    subgraph Arbitrum Sepolia [Arbitrum Sepolia Testnet - Chain ID: 421614]
-        subgraph Core Governance & State
-            Registry[AgentMandateRegistry.sol<br/>EIP-712 Mandates & Budgets]
-            Oracle[RWAStateOracle.sol<br/>NAV, Staleness & Liquidity Tiers]
-            Compliance[ComplianceRegistry.sol<br/>KYC & Sanction Verification]
+    subgraph ArbitrumSepolia ["Arbitrum Sepolia Testnet (Chain ID: 421614)"]
+        subgraph CoreGov ["Core Governance & State"]
+            Registry["AgentMandateRegistry.sol<br/>EIP-712 Mandates & Budgets"]
+            Oracle["RWAStateOracle.sol<br/>NAV, Staleness & Liquidity Tiers"]
+            Compliance["ComplianceRegistry.sol<br/>KYC & Sanction Verification"]
         end
 
-        subgraph Enforcement Authority
-            Gate[AgentExecutionGate.sol<br/>Atomic Validation & Low-Level Dispatch]
+        subgraph Authority ["Enforcement Authority"]
+            Gate["AgentExecutionGate.sol<br/>Atomic Validation & Low-Level Dispatch"]
         end
 
-        subgraph Vault & Settlement
-            Vault[TBillVault.sol<br/>ERC-4626 Tokenized T-Bill Vault]
-            Asset[tBUSD Token<br/>Settlement Reserve (ERC-20)]
+        subgraph VaultSettlement ["Vault & Settlement"]
+            Vault["TBillVault.sol<br/>ERC-4626 Tokenized T-Bill Vault"]
+            Asset["tBUSD Token<br/>Settlement Reserve (ERC-20)"]
         end
     end
 
-    subgraph Client Application
-        Frontend[Next.js App Router Dashboard<br/>Wagmi v2 / Viem / React Query]
+    subgraph ClientApp ["Client Application"]
+        Frontend["Next.js App Router Dashboard<br/>Wagmi v2 / Viem / React Query"]
     end
 
     User -->|Grants EIP-712 Mandate| Registry
@@ -153,7 +153,7 @@ sequenceDiagram
     participant Gate as AgentExecutionGate
     participant Registry as AgentMandateRegistry
     participant Oracle as RWAStateOracle
-    participant Target as TBillVault (ERC-4626)
+    participant Target as TBillVault
 
     Agent->>Gate: canExecuteAs(caller, ExecutionRequest)
     Note over Gate: Pre-flight simulation
@@ -194,10 +194,10 @@ sequenceDiagram
     alt block.timestamp - navUpdatedAt > maxNavAge
         Oracle-->>Gate: revert NavStale()
         Gate-->>Agent: revert NavStale()
-    else action == REDEEM && !redemptionOpen
+    else action is REDEEM and redemption is closed
         Oracle-->>Gate: revert RedemptionClosed()
         Gate-->>Agent: revert RedemptionClosed()
-    else action == ALLOCATE && liquidityTier < minTier
+    else action is ALLOCATE and liquidityTier < minTier
         Oracle-->>Gate: revert LiquidityTooLow()
         Gate-->>Agent: revert LiquidityTooLow()
     end
