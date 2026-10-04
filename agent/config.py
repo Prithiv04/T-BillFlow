@@ -5,6 +5,12 @@ Network separation:
   NETWORK=arbitrum_sepolia  → Testnet (Arbitrum Sepolia chainId 421614)
   NETWORK=arbitrum_one      → Production (Arbitrum One chainId 42161)
 
+RPC provider priority (Arbitrum Sepolia):
+  1. QUICKNODE_SEPOLIA_RPC_URL  — QuickNode Build-plan endpoint (preferred)
+  2. ARBITRUM_SEPOLIA_RPC_URL  — Alchemy / other private endpoint (fallback)
+  QuickNode is blockchain infrastructure only. It does NOT provide
+  Treasury NAV data, RWA attestations, or custody settlement.
+
 LIVE mode NEVER falls back to mock/demo data. Missing production credentials
 raise immediately rather than silently using defaults.
 """
@@ -19,14 +25,18 @@ NETWORK = os.getenv("NETWORK", "arbitrum_sepolia").lower()
 MOCK_MODE = os.getenv("AGENT_MOCK_MODE", "false").lower() == "true" or NETWORK == "mock"
 
 # ─── RPC endpoints (values are NOT printed or logged) ────────────────────────
+# QuickNode Build-plan endpoint for Arbitrum Sepolia (server-side only, never exposed to browser).
+# Configure via QUICKNODE_SEPOLIA_RPC_URL in your .env file.
+QUICKNODE_SEPOLIA_RPC_URL = os.getenv("QUICKNODE_SEPOLIA_RPC_URL")
 ARBITRUM_SEPOLIA_RPC_URL = os.getenv("ARBITRUM_SEPOLIA_RPC_URL")
 ARBITRUM_ONE_RPC_URL = os.getenv("ARBITRUM_ONE_RPC_URL")
 
-# Select the appropriate RPC for the configured network
+# Select the appropriate RPC for the configured network.
+# For arbitrum_sepolia: QuickNode endpoint is preferred; ARBITRUM_SEPOLIA_RPC_URL is the fallback.
 if NETWORK == "arbitrum_one":
     RPC_URL = ARBITRUM_ONE_RPC_URL
 elif NETWORK == "arbitrum_sepolia":
-    RPC_URL = ARBITRUM_SEPOLIA_RPC_URL
+    RPC_URL = QUICKNODE_SEPOLIA_RPC_URL or ARBITRUM_SEPOLIA_RPC_URL
 else:
     RPC_URL = None  # mock mode — no RPC needed
 
@@ -96,7 +106,11 @@ CURRENT_YIELD = float(os.getenv("CURRENT_YIELD", "6.5"))       # percent (test-o
 if not MOCK_MODE:
     missing = []
     if not RPC_URL:
-        missing.append(f"{NETWORK.upper()}_RPC_URL")
+        # For Arbitrum Sepolia, either QUICKNODE_SEPOLIA_RPC_URL or ARBITRUM_SEPOLIA_RPC_URL must be set.
+        if NETWORK == "arbitrum_sepolia":
+            missing.append("QUICKNODE_SEPOLIA_RPC_URL (or ARBITRUM_SEPOLIA_RPC_URL as fallback)")
+        else:
+            missing.append(f"{NETWORK.upper()}_RPC_URL")
     if not PRIVATE_KEY:
         missing.append("PRIVATE_KEY")
 

@@ -2,7 +2,16 @@ import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { arbitrumSepolia } from "wagmi/chains";
 import { http } from "wagmi";
 
+// ── RPC URL for Viem/Wagmi transport ──────────────────────────────────────────
+// QuickNode endpoints contain API tokens and MUST NOT be used in NEXT_PUBLIC_*
+// variables, since those are embedded in the client bundle. Instead:
+//   - Server-side agent uses QUICKNODE_SEPOLIA_RPC_URL (see agent/config.py)
+//   - Frontend uses NEXT_PUBLIC_QUICKNODE_SEPOLIA_RPC_URL *only* if you
+//     intentionally provision a browser-safe (no-auth / IP-restricted) URL.
+//   - Otherwise, set NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC to a browser-safe
+//     private or public RPC and leave QuickNode for server-side use only.
 const rpcUrl =
+  process.env.NEXT_PUBLIC_QUICKNODE_SEPOLIA_RPC_URL ||
   process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC ||
   "https://sepolia-rollup.arbitrum.io/rpc";
 
