@@ -82,53 +82,54 @@ export default function OverviewPage() {
       subtitle="Autonomous Agent Execution & RWA Boundary Enforcement"
     >
       {/* 1. Executive Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="panel p-4">
-          <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
-            <span>Portfolio Value</span>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <div className="panel p-5">
+          <div className="flex items-center justify-between text-gray-400 text-xs mb-1.5">
+            <span className="font-medium">Portfolio Position</span>
             <Wallet className="h-4 w-4 text-blue-400" />
           </div>
-          <div className="text-xl font-bold font-mono text-white">{portfolioValueDisplay}</div>
-          <div className="text-[10px] text-gray-500 font-mono mt-0.5">{sharesDisplay}</div>
+          <div className="text-xl font-bold font-mono text-white tracking-tight">{portfolioValueDisplay}</div>
+          <div className="text-[11px] text-gray-500 font-mono mt-1">{sharesDisplay}</div>
         </div>
 
-        <div className="panel p-4">
-          <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
-            <span>Active Mandates</span>
+        <div className="panel p-5">
+          <div className="flex items-center justify-between text-gray-400 text-xs mb-1.5">
+            <span className="font-medium">Active Mandates</span>
             <ShieldCheck className="h-4 w-4 text-emerald-400" />
           </div>
-          <div className="text-xl font-bold font-mono text-white">{activeMandatesDisplay}</div>
-          <div className="text-[10px] text-gray-500 font-mono mt-0.5">{activeMandatesSub}</div>
+          <div className="text-xl font-bold font-mono text-white tracking-tight">{activeMandatesDisplay}</div>
+          <div className="text-[11px] text-gray-500 font-mono mt-1">{activeMandatesSub}</div>
         </div>
 
-        <div className="panel p-4">
-          <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
-            <span>Execution Gate Status</span>
+        <div className="panel p-5">
+          <div className="flex items-center justify-between text-gray-400 text-xs mb-1.5">
+            <span className="font-medium">Execution Gate Status</span>
             <Bot className="h-4 w-4 text-amber-400" />
           </div>
-          <div className="text-xl font-bold font-mono">
+          <div className="text-xl font-bold font-mono mt-0.5">
             <span
-              className={`text-sm px-2 py-0.5 rounded font-mono font-semibold ${
+              className={`text-xs px-2.5 py-1 rounded font-mono font-bold tracking-wide inline-flex items-center gap-1.5 ${
                 canExecute
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                  : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                  : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
               }`}
             >
-              {canExecute ? 'EXECUTION ALLOWED' : 'EXECUTION BLOCKED'}
+              <span className={`w-2 h-2 rounded-full ${canExecute ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+              {canExecute ? 'EXECUTION READY' : 'EXECUTION BLOCKED'}
             </span>
           </div>
-          <div className="text-[10px] text-gray-500 font-mono mt-1">canExecute() on-chain evaluation</div>
+          <div className="text-[11px] text-gray-500 font-mono mt-1">canExecute() on-chain evaluation</div>
         </div>
 
-        <div className="panel p-4">
-          <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
-            <span>3M U.S. Treasury Yield</span>
+        <div className="panel p-5">
+          <div className="flex items-center justify-between text-gray-400 text-xs mb-1.5">
+            <span className="font-medium">3M U.S. Treasury Yield</span>
             <TrendingUp className="h-4 w-4 text-emerald-400" />
           </div>
-          <div className="text-xl font-bold font-mono text-emerald-400">
+          <div className="text-xl font-bold font-mono text-emerald-400 tracking-tight">
             {treasuryData.formattedYield}
           </div>
-          <div className="text-[10px] text-gray-500 font-mono mt-0.5">
+          <div className="text-[11px] text-gray-500 font-mono mt-1">
             {treasuryData.observationDate
               ? `As of ${treasuryData.observationDate} · U.S. Treasury`
               : 'Daily Treasury Par Yield Curve Rates'}
@@ -137,8 +138,8 @@ export default function OverviewPage() {
       </div>
 
       {/* 2. Live Protocol Status Banner */}
-      <div className="flex items-center justify-between p-4 mb-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono">
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center justify-between p-4 mb-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="font-semibold text-emerald-400">ARBITRUM SEPOLIA PROTOCOL</span>
           <span className="text-gray-400">— Connected to live on-chain protocol contracts. RWA eligibility is enforced via RWAStateOracle.</span>
@@ -147,7 +148,7 @@ export default function OverviewPage() {
       </div>
 
       {/* 3. Main Operational Panels: Gate & RWA/Mandate details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <MainExecutionPanel onExecuted={refresh} />
         <div className="grid grid-cols-1 gap-6">
           <RwaStateCard />
@@ -156,17 +157,17 @@ export default function OverviewPage() {
       </div>
 
       {/* 4. Dedicated Core Visualizer: Authorization != Eligibility */}
-      <div className="mb-6">
+      <div className="mb-8">
         <AuthorizationEligibilityCard />
       </div>
 
       {/* 5. Execution Operations Log */}
-      <div className="mb-6">
+      <div className="mb-8">
         <TransactionHistory />
       </div>
 
       {/* 6. Technical Details Drawer (For judges and auditors) */}
-      <div className="mb-6">
+      <div className="mb-8">
         <TechnicalDetailsDrawer />
       </div>
     </AppShell>
