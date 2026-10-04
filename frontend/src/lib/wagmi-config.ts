@@ -1,4 +1,5 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
+import { injectedWallet, metaMaskWallet } from "@rainbow-me/rainbowkit/wallets";
 import { arbitrumSepolia } from "wagmi/chains";
 import { http } from "wagmi";
 
@@ -9,11 +10,6 @@ const rpcUrl =
   "https://sepolia-rollup.arbitrum.io/rpc";
 
 // ── WalletConnect Project ID ───────────────────────────────────────────────────
-// A real project ID from https://cloud.walletconnect.com is needed for
-// WalletConnect QR-code scanning. For MetaMask (injected), it is NOT needed
-// and the ConnectButton will work without it.
-// Using a zeroed placeholder so WalletConnect initialises without crashing,
-// while MetaMask and other injected wallets still function normally.
 const projectId =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ||
   "00000000000000000000000000000000";
@@ -22,6 +18,12 @@ export const config = getDefaultConfig({
   appName: "T-BillFlow",
   projectId,
   chains: [arbitrumSepolia],
+  wallets: [
+    {
+      groupName: "Popular",
+      wallets: [injectedWallet, metaMaskWallet],
+    },
+  ],
   transports: {
     [arbitrumSepolia.id]: http(rpcUrl),
   },
