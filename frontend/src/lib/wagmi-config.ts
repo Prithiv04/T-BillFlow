@@ -21,7 +21,7 @@ const projectId =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "tbillflow-community-fallback";
 
 export const config = getDefaultConfig({
-  appName: "T-BillFlow 2.0",
+  appName: "T-BillFlow",
   projectId: projectId,
   chains: [arbitrumSepolia],
   transports: {

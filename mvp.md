@@ -1,7 +1,7 @@
-T-BillFlow 2.0 — Complete Professional MVP Implementation Plan
+T-BillFlow — Complete Professional MVP Implementation Plan
 1. Product Definition
 
-Build T-BillFlow 2.0, an Arbitrum-native RWA-aware agent execution layer for tokenized US Treasury exposure.
+Build T-BillFlow, an Arbitrum-native RWA-aware agent execution layer for tokenized US Treasury exposure.
 
 Core principle
 

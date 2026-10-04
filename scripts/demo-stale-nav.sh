@@ -2,7 +2,7 @@
 # =============================================================================
 # demo-stale-nav.sh — CASE 4: Valid mandate + stale NAV → NAV_STALE
 #
-# This is the SIGNATURE demo case for T-BillFlow 2.0.
+# This is the SIGNATURE demo case for T-BillFlow.
 #
 # Pre-conditions:
 #   - Valid mandate exists

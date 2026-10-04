@@ -1,4 +1,4 @@
-"""Institutional Indexer / Subgraph integration boundary for T-BillFlow 2.0.
+"""Institutional Indexer / Subgraph integration boundary for T-BillFlow.
 
 Provides an on-chain event query abstraction for:
 - Executed (successful gate executions)

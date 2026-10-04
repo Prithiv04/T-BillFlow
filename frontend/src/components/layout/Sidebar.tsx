@@ -28,7 +28,6 @@ export function Sidebar() {
             <div>
               <div className="font-semibold text-sm tracking-tight text-white flex items-center gap-1.5">
                 T-BillFlow
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#28A0F0]/20 text-[#28A0F0] font-mono border border-[#28A0F0]/30 font-semibold">2.0</span>
               </div>
               <div className="text-[10px] font-mono tracking-wider text-gray-400 uppercase mt-0.5">Arbitrum RWA Layer</div>
             </div>

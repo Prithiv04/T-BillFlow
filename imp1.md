@@ -1,6 +1,6 @@
-# T-BillFlow 2.0 — Problem → Solution Master Implementation Plan
+# T-BillFlow — Problem → Solution Master Implementation Plan
 
-You are working on the existing T-BillFlow 2.0 repository.
+You are working on the existing T-BillFlow repository.
 
 Do NOT rebuild the project from scratch.
 

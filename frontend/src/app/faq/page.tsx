@@ -5,8 +5,8 @@ import { AppShell } from "@/components/layout/AppShell";
 
 const FAQS = [
   {
-    q: "What is T-BillFlow 2.0?",
-    a: "T-BillFlow 2.0 is an Arbitrum-native, RWA-aware agent execution layer. It bridges autonomous off-chain AI agents with tokenized Real-World Assets (such as US Treasury Bills) while enforcing the core principle: Authorization ≠ Eligibility.",
+    q: "What is T-BillFlow?",
+    a: "T-BillFlow is an Arbitrum-native, RWA-aware agent execution layer. It bridges autonomous off-chain AI agents with tokenized Real-World Assets (such as US Treasury Bills) while enforcing the core principle: Authorization ≠ Eligibility.",
   },
   {
     q: "What does 'Authorization ≠ Eligibility' mean?",

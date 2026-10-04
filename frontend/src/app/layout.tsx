@@ -6,7 +6,7 @@ import { Web3Provider } from "@/components/Web3Provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "T-BillFlow 2.0 — RWA-Aware Agent Execution Layer",
+  title: "T-BillFlow — RWA-Aware Agent Execution Layer",
   description:
     "Arbitrum-native RWA-aware execution layer for tokenized US Treasury yield. Authorization ≠ Eligibility.",
 };

@@ -1,8 +1,8 @@
-# T-BillFlow 2.0
+# T-BillFlow
 
 > **AUTHORIZATION ≠ ELIGIBILITY** — An agent may be authorized to act, but the transaction must still be blocked on-chain if the underlying RWA is currently ineligible.
 
-T-BillFlow 2.0 is an Arbitrum-native, RWA-aware agent execution layer. It allows off-chain AI agents to propose vault actions, while an on-chain **AgentExecutionGate** serves as the final enforcement authority — combining mandate-level authorization with real-time RWA state eligibility checks before any transaction executes.
+T-BillFlow is an Arbitrum-native, RWA-aware agent execution layer. It allows off-chain AI agents to propose vault actions, while an on-chain **AgentExecutionGate** serves as the final enforcement authority — combining mandate-level authorization with real-time RWA state eligibility checks before any transaction executes.
 
 ---
 
@@ -10,7 +10,7 @@ T-BillFlow 2.0 is an Arbitrum-native, RWA-aware agent execution layer. It allows
 
 DeFi protocols that integrate AI agents face a critical gap: off-chain agents may be granted wide authorization, but there is no on-chain mechanism to block execution when the underlying **Real-World Asset (RWA)** is in an ineligible state (e.g., NAV is stale, redemption is suspended, liquidity is insufficient).
 
-Existing solutions conflate **authorization** (who may act) with **eligibility** (whether the asset can currently be acted upon). T-BillFlow 2.0 separates these concerns with a clean, composable architecture.
+Existing solutions conflate **authorization** (who may act) with **eligibility** (whether the asset can currently be acted upon). T-BillFlow separates these concerns with a clean, composable architecture.
 
 ---
 
@@ -114,7 +114,7 @@ ERC-4626 compliant T-Bill vault:
 
 Ordinary agent permission systems (ACLs, role-based access control) only answer: _"Is the agent allowed?"_
 
-T-BillFlow 2.0 answers **two separate questions**:
+T-BillFlow answers **two separate questions**:
 1. _"Is the agent authorized for this specific action/amount/target?"_ (AgentMandateRegistry)
 2. _"Is the underlying RWA currently eligible for this action?"_ (RWAStateOracle)
 
